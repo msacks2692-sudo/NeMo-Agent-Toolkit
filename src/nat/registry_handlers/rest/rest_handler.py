@@ -128,8 +128,12 @@ class RestRegistryHandler(AbstractRegistryHandler):
             whl_paths = []
 
             for package in validated_pull_response.packages:
+                whl_name = package.whl_name
+                if os.path.basename(whl_name) != whl_name:
+                    raise ValueError(f"Invalid filename: {whl_name}")
+
                 whl_bytes = base64.b64decode(package.whl)
-                whl_path = os.path.join(tmp_dir, package.whl_name)
+                whl_path = os.path.join(tmp_dir, whl_name)
 
                 with open(whl_path, "wb") as f:
                     f.write(whl_bytes)
