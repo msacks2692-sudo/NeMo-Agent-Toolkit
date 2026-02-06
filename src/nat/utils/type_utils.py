@@ -59,7 +59,14 @@ else:
 
 class DecomposedType:
 
+    @lru_cache(maxsize=4096)
+    def __new__(cls, original: type):
+        return super().__new__(cls)
+
     def __init__(self, original: type):
+
+        if hasattr(self, 'type'):
+            return
 
         if (inspect.Signature.empty == original):
             original = types.NoneType
