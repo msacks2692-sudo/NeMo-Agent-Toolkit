@@ -200,4 +200,7 @@ def status() -> tuple[dict[str, str], int]:
 
 
 if __name__ == '__main__':
+    if os.geteuid() == 0:
+        logger.warning(
+            "Running sandbox server as root is dangerous! Consider running as a non-privileged user.")
     app.run(port=6000)

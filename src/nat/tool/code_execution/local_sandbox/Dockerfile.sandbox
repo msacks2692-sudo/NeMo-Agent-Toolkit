@@ -33,6 +33,11 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 COPY local_sandbox_server.py /app/main.py
 RUN mkdir /workspace
 
+# Create a non-root user and switch to it
+RUN useradd -m -u 1000 sandboxuser && \
+    chown -R sandboxuser:sandboxuser /workspace
+USER sandboxuser
+
 # Set Flask app environment variables and ports
 ARG UWSGI_CHEAPER
 ENV UWSGI_CHEAPER=$UWSGI_CHEAPER
