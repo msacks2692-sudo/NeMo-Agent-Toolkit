@@ -18,7 +18,7 @@
 # NOTE: needs to run from the root of the repo!
 
 DOCKER_COMMAND=${DOCKER_COMMAND:-"docker"}
-SANDBOX_NAME=${1:-'local-sandbox'}
+SANDBOX_NAME=${1:-'local-sandbox:0.2'}
 
 # UWSGI_CHEAPER sets the number of initial uWSGI worker processes
 # UWSGI_PROCESSES sets the maximum number of uWSGI worker processes
@@ -51,6 +51,6 @@ fi
 
 # Mount the output_data directory directly so files created in container appear in the local directory
 ${DOCKER_COMMAND} run --rm -ti --name=local-sandbox \
-  --network=host \
+  -p 6000:6000 \
   -v "${OUTPUT_DATA_PATH}:/workspace" \
   ${SANDBOX_NAME}
