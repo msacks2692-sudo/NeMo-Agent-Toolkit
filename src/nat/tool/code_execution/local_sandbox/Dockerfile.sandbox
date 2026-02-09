@@ -18,20 +18,31 @@ ARG UWSGI_CHEAPER=5
 ARG UWSGI_PROCESSES=10
 
 # Use the base image with Python 3.13
-FROM python:3.13-slim-bookworm
+FROM public.ecr.aws/docker/library/python:3.13-slim-bookworm
 
-
+# Install dependencies
 RUN apt update && \
     apt upgrade && \
     apt install -y --no-install-recommends libexpat1 && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Create a non-root user
+ARG UID=1000
+ARG GID=1000
+# Handle case where GID already exists (e.g. dialout on macOS) or UID exists (e.g. root)
+RUN groupadd -g "${GID}" sandboxgroup || true && \
+    useradd -u "${UID}" -g "${GID}" -o -m -s /bin/bash sandboxuser
+
 # Set up application code and install Python dependencies
 COPY sandbox.requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 COPY local_sandbox_server.py /app/main.py
-RUN mkdir /workspace
+
+# Create workspace and set permissions
+# Use GID instead of group name in case groupadd failed due to existing GID
+RUN mkdir -p /workspace && \
+    chown -R sandboxuser:"${GID}" /app /workspace
 
 # Set Flask app environment variables and ports
 ARG UWSGI_CHEAPER
@@ -42,6 +53,9 @@ ENV UWSGI_PROCESSES=$UWSGI_PROCESSES
 
 ENV LISTEN_PORT=6000
 EXPOSE 6000
+
+# Switch to non-root user
+USER sandboxuser
 
 WORKDIR /app
 CMD uwsgi --http 0.0.0.0:${LISTEN_PORT} --master -p ${UWSGI_PROCESSES} --force-cwd /workspace -w main:app
