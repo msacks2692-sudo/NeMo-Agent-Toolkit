@@ -72,6 +72,7 @@ class MilvusRetriever(Retriever):
         self._default_params = None
         self._bound_params = []
         self.content_field = content_field
+        self._collection_schemas = {}
         logger.info("Milvus Retriever using %s for search.", self._search_func.__name__)
 
     def bind(self, **kwargs) -> None:
@@ -125,15 +126,20 @@ class MilvusRetriever(Retriever):
                      collection_name,
                      top_k)
 
-        if not await self._validate_collection(collection_name):
-            raise CollectionNotFoundError(f"Collection: {collection_name} does not exist")
+        if collection_name not in self._collection_schemas:
+            if not await self._validate_collection(collection_name):
+                raise CollectionNotFoundError(f"Collection: {collection_name} does not exist")
+
+            # Get collection schema
+            if self._is_async:
+                self._collection_schemas[collection_name] = await self._client.describe_collection(collection_name)
+            else:
+                self._collection_schemas[collection_name] = self._client.describe_collection(collection_name)
+
+        collection_schema = self._collection_schemas[collection_name]
 
         # If no output fields are specified, return all of them
         if not output_fields:
-            if self._is_async:
-                collection_schema = await self._client.describe_collection(collection_name)
-            else:
-                collection_schema = self._client.describe_collection(collection_name)
             output_fields = [
                 field["name"] for field in collection_schema.get("fields") if field["name"] != vector_field_name
             ]
@@ -218,15 +224,17 @@ class MilvusRetriever(Retriever):
                      collection_name,
                      top_k)
 
-        if not await self._validate_collection(collection_name):
-            raise CollectionNotFoundError(f"Collection: {collection_name} does not exist")
+        if collection_name not in self._collection_schemas:
+            if not await self._validate_collection(collection_name):
+                raise CollectionNotFoundError(f"Collection: {collection_name} does not exist")
 
-        # Get collection schema
-        if self._is_async:
-            collection_schema = await self._client.describe_collection(collection_name)
-        else:
-            collection_schema = self._client.describe_collection(collection_name)
+            # Get collection schema
+            if self._is_async:
+                self._collection_schemas[collection_name] = await self._client.describe_collection(collection_name)
+            else:
+                self._collection_schemas[collection_name] = self._client.describe_collection(collection_name)
 
+        collection_schema = self._collection_schemas[collection_name]
         available_fields = [v.get("name") for v in collection_schema.get("fields", [])]
 
         if self.content_field not in available_fields:
