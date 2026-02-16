@@ -1,0 +1,4 @@
+## 2025-02-18 - Container Root Execution and Host Network Access
+**Vulnerability:** The `local_sandbox` container was configured to run as root by default and used `--network=host`. This would allow code executed within the sandbox to access services running on the host's loopback interface and potentially modify files on the host if volumes were mounted with write permissions.
+**Learning:** Development tools often default to insecure configurations for ease of use (e.g., sharing network stack for simpler connectivity). "Sandbox" implies isolation, but Docker's default settings do not guarantee it without explicit configuration.
+**Prevention:** Always define a non-root user in `Dockerfile` and switch to it. Avoid `--network=host`; use explicit port mapping (`-p 127.0.0.1:PORT:PORT`) to bind only to localhost.
