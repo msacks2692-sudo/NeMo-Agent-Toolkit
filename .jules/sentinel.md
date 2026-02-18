@@ -1,0 +1,4 @@
+## 2025-02-18 - Local Sandbox Network Exposure
+**Vulnerability:** The `local_sandbox` container was configured with `--network=host`, exposing the code execution service (port 6000) to all network interfaces on the host machine. This could allow unauthorized users on the same network to execute arbitrary code on the host (within the container context, but with mounted volumes).
+**Learning:** Using `--network=host` bypasses Docker's network isolation, binding container ports directly to the host's network interfaces. This is often done for convenience but is dangerous for services that should be local-only, especially those providing code execution capabilities.
+**Prevention:** Always use explicit port binding to localhost (e.g., `-p 127.0.0.1:6000:6000`) for services intended for local use only. This ensures the service is not accessible from external networks.
