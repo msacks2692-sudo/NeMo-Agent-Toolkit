@@ -1,0 +1,4 @@
+## 2025-06-03 - [Code Execution Sandbox Network Isolation]
+**Vulnerability:** The `start_local_sandbox.sh` script launched the code execution sandbox using `--network=host`, exposing the unauthenticated Python code execution service (port 6000) to the entire network and allowing sandboxed code to access any service bound to `localhost` on the host machine.
+**Learning:** For components executing untrusted code ("sandboxes"), relying on container defaults or convenience flags like `--network=host` compromises isolation. A sandbox must be network-isolated to prevent lateral movement or SSRF-like attacks against the host.
+**Prevention:** Always use explicit port mapping (e.g., `-p 127.0.0.1:6000:6000`) instead of `--network=host` for services that do not require full host network access, especially those handling untrusted input.
