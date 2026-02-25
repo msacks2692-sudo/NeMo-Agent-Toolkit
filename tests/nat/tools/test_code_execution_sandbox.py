@@ -490,3 +490,18 @@ time.sleep(2.0)
     response = requests.post(sandbox_config["execute_url"], json=payload, timeout=sandbox_config["timeout"] + 5)
     assert response.json()["process_status"] == "timeout"
     assert response.status_code == 200
+
+@pytest.mark.integration
+def test_sandbox_user_is_not_root(sandbox_config: dict[str, Any]):
+    """Test that the sandbox process is not running as root."""
+    code = """
+import os
+import getpass
+print(f'User: {getpass.getuser()}')
+print(f'UID: {os.getuid()}')
+"""
+    result = run_sandbox_code(sandbox_config, code)
+
+    assert result["process_status"] == "completed"
+    assert "User: root" not in result["stdout"]
+    assert "UID: 0" not in result["stdout"]
