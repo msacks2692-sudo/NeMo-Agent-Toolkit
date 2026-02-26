@@ -27,11 +27,20 @@ RUN apt update && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Create a non-root user
+RUN useradd -m -u 1000 sandbox
+
 # Set up application code and install Python dependencies
 COPY sandbox.requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 COPY local_sandbox_server.py /app/main.py
-RUN mkdir /workspace
+
+# Create workspace and set permissions
+RUN mkdir -p /workspace && \
+    chown -R sandbox:sandbox /app /workspace
+
+# Switch to non-root user
+USER sandbox
 
 # Set Flask app environment variables and ports
 ARG UWSGI_CHEAPER
