@@ -96,10 +96,9 @@ class MilvusRetriever(Retriever):
     async def _validate_collection(self, collection_name: str) -> bool:
         """Validate that a collection exists."""
         if self._is_async:
-            collections = await self._client.list_collections()
+            return await self._client.has_collection(collection_name)
         else:
-            collections = self._client.list_collections()
-        return collection_name in collections
+            return self._client.has_collection(collection_name)
 
     async def search(self, query: str, **kwargs):
         return await self._search_func(query=query, **kwargs)
