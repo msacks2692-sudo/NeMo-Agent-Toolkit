@@ -697,7 +697,7 @@ class EvaluationRun:
         # Run custom scripts and upload evaluation outputs to S3
         if self.eval_config.general.output:
             output_uploader = OutputUploader(self.eval_config.general.output, job_id=job_id)
-            output_uploader.run_custom_scripts()
+            await asyncio.to_thread(output_uploader.run_custom_scripts)
             await output_uploader.upload_directory()
 
         return EvaluationRunOutput(workflow_output_file=self.workflow_output_file,
