@@ -1,0 +1,3 @@
+## 2024-05-24 - Blanket String Replacements Before Parsing
+**Learning:** Pre-processing strings unconditionally before JSON parsing (like replacing all single quotes with double quotes to support non-standard Python dict strings) is dangerous. It corrupts valid JSON that legitimately contains the replaced characters (e.g. `{"key": "value with 'single quotes'"}`). It also incurs unnecessary performance overhead for the happy path (valid standard JSON).
+**Action:** Always use a "try-parse first" strategy. Attempt to parse the standard format, and only apply fallbacks/manipulations if a parsing error occurs.
