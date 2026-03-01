@@ -56,12 +56,13 @@ class MilvusRetriever(Retriever):
         """
         self._client: MilvusClient | AsyncMilvusClient = client
         self._embedder = embedder
+        self._collection_schemas: dict[str, dict] = {}
 
         # Detect if client is async by inspecting method capabilities
         search_method = getattr(client, "search", None)
-        list_collections_method = getattr(client, "list_collections", None)
+        has_collection_method = getattr(client, "has_collection", None)
         self._is_async = any(
-            inspect.iscoroutinefunction(method) for method in (search_method, list_collections_method)
+            inspect.iscoroutinefunction(method) for method in (search_method, has_collection_method)
             if method is not None)
         logger.info("Initialized Milvus Retriever with %s client", "async" if self._is_async else "sync")
 
@@ -96,10 +97,18 @@ class MilvusRetriever(Retriever):
     async def _validate_collection(self, collection_name: str) -> bool:
         """Validate that a collection exists."""
         if self._is_async:
-            collections = await self._client.list_collections()
+            return await self._client.has_collection(collection_name)
         else:
-            collections = self._client.list_collections()
-        return collection_name in collections
+            return self._client.has_collection(collection_name)
+
+    async def _get_collection_schema(self, collection_name: str) -> dict:
+        """Cache and retrieve collection schema."""
+        if collection_name not in self._collection_schemas:
+            if self._is_async:
+                self._collection_schemas[collection_name] = await self._client.describe_collection(collection_name)
+            else:
+                self._collection_schemas[collection_name] = self._client.describe_collection(collection_name)
+        return self._collection_schemas[collection_name]
 
     async def search(self, query: str, **kwargs):
         return await self._search_func(query=query, **kwargs)
@@ -130,10 +139,7 @@ class MilvusRetriever(Retriever):
 
         # If no output fields are specified, return all of them
         if not output_fields:
-            if self._is_async:
-                collection_schema = await self._client.describe_collection(collection_name)
-            else:
-                collection_schema = self._client.describe_collection(collection_name)
+            collection_schema = await self._get_collection_schema(collection_name)
             output_fields = [
                 field["name"] for field in collection_schema.get("fields") if field["name"] != vector_field_name
             ]
@@ -222,10 +228,7 @@ class MilvusRetriever(Retriever):
             raise CollectionNotFoundError(f"Collection: {collection_name} does not exist")
 
         # Get collection schema
-        if self._is_async:
-            collection_schema = await self._client.describe_collection(collection_name)
-        else:
-            collection_schema = self._client.describe_collection(collection_name)
+        collection_schema = await self._get_collection_schema(collection_name)
 
         available_fields = [v.get("name") for v in collection_schema.get("fields", [])]
 
