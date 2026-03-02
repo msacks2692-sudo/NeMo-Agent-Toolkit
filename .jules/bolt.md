@@ -1,0 +1,3 @@
+## 2024-03-02 - [JSON Validation Optimization]
+**Learning:** Optimizing JSON validation by using a 'try-parse first' strategy avoids unnecessary string replacements. The current implementation replaces single quotes with double quotes before parsing for all inputs. Valid JSON doesn't contain single quotes as delimiters, but might contain them inside strings. Attempting `json.loads` first saves memory and time on the happy path, avoiding a full string scan and duplicate string creation for large payloads.
+**Action:** Replace blanket `string.replace` with a try-catch pattern. Try parsing first, and only apply the string replacement fallback if the first parse fails.
