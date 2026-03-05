@@ -38,12 +38,27 @@ ClassInfo: TypeAlias = type | types.UnionType | tuple["ClassInfo", ...]
 
 # utility for check if string is a valid json string
 def is_valid_json(string):
+    """
+    Check if a string is a valid JSON string.
+
+    Optimization: Uses a 'try-parse first' strategy to avoid blanket string replacements
+    on the happy path. This prevents corrupting valid JSON containing literal single quotes
+    (e.g., {"message": "Don't"}) while preserving the fallback behavior for Python dict
+    representations that use single quotes.
+    """
     try:
-        input_str = string.replace("'", "\"")
-        json.loads(input_str)
+        # Fast path: try parsing the original string first
+        json.loads(string)
         return True
-    except json.JSONDecodeError:
-        return False
+    except (json.JSONDecodeError, TypeError):
+        # Fallback for strings that might use single quotes instead of double quotes
+        # (e.g. Python dict representations). Also catches TypeError if string is not a str.
+        try:
+            input_str = string.replace("'", "\"")
+            json.loads(input_str)
+            return True
+        except (json.JSONDecodeError, AttributeError, TypeError):
+            return False
 
 
 # A compatibility layer for typing.override decorator.
