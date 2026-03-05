@@ -1,0 +1,3 @@
+## 2025-02-28 - [JSON Validation Optimization]
+**Learning:** In string validation logic, blanket string replacements (like `.replace("'", "\"")`) meant to provide fallback compatibility can add significant performance overhead to the "happy path" (valid input). More importantly, such replacements can inadvertently corrupt valid input (e.g., valid JSON containing literal single quotes within string values like `{"message": "don't"}`).
+**Action:** Use a "try-parse first" strategy to optimize the happy path and avoid corrupting valid data. Only attempt fallback transformations (like replacing quotes) within the exception block after the initial parsing fails.
