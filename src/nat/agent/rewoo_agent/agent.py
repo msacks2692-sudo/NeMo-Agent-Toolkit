@@ -328,7 +328,7 @@ class ReWOOAgentGraph(BaseAgent):
             current_level_placeholders = state.execution_levels[current_level]
 
             # Filter to only placeholders not yet completed
-            pending_placeholders = list(set(current_level_placeholders) - set(state.intermediate_results.keys()))
+            pending_placeholders = list(set(current_level_placeholders) - set(state.intermediate_results))
 
             if not pending_placeholders:
                 # All placeholders in this level are done, move to next level
