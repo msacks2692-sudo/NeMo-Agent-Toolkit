@@ -534,7 +534,7 @@ class FunctionGroup:
         """
         Returns a dictionary of all functions in the function group except the excluded functions.
         """
-        missing = set(self._config.exclude) - set(self._functions.keys())
+        missing = set(self._config.exclude) - set(self._functions)
         if missing:
             raise ValueError(f"Unknown excluded functions: {sorted(missing)}")
 
@@ -549,7 +549,7 @@ class FunctionGroup:
                 filter_fn = self._filter_fn
 
         excluded = set(self._config.exclude)
-        included = set(await filter_fn(list(self._functions.keys())))
+        included = set(await filter_fn(list(self._functions)))
 
         result = {}
         for name in self._functions:
@@ -626,7 +626,7 @@ class FunctionGroup:
         ValueError
             When the function group is configured to exclude functions that are not found in the group.
         """
-        missing = set(self._config.exclude) - set(self._functions.keys())
+        missing = set(self._config.exclude) - set(self._functions)
         if missing:
             raise ValueError(f"Unknown excluded functions: {sorted(missing)}")
 
@@ -641,7 +641,7 @@ class FunctionGroup:
                 filter_fn = self._filter_fn
 
         excluded = set(self._config.exclude)
-        included = set(await filter_fn(list(self._functions.keys())))
+        included = set(await filter_fn(list(self._functions)))
 
         result = {}
         for name in self._functions:
@@ -685,7 +685,7 @@ class FunctionGroup:
         ValueError
             When the function group is configured to include functions that are not found in the group.
         """
-        missing = set(self._config.include) - set(self._functions.keys())
+        missing = set(self._config.include) - set(self._functions)
         if missing:
             raise ValueError(f"Unknown included functions: {sorted(missing)}")
 
@@ -737,7 +737,7 @@ class FunctionGroup:
             else:
                 filter_fn = self._filter_fn
 
-        included = set(await filter_fn(list(self._functions.keys())))
+        included = set(await filter_fn(list(self._functions)))
         result = {}
         for name in included:
             if await self._fn_should_be_included(name):

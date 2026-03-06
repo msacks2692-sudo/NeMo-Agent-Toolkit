@@ -181,7 +181,7 @@ def execute_agno_tool(name: str,
                                                           or filtered_kwargs["query"].strip() == "")
 
         # Log if we filtered anything
-        filtered_keys = set(kwargs.keys()) - set(filtered_kwargs.keys())
+        filtered_keys = set(kwargs) - set(filtered_kwargs)
         if filtered_keys:
             logger.debug(f"Filtered reserved keywords from kwargs: {filtered_keys}")
 
