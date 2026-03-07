@@ -30,8 +30,12 @@ RUN apt update && \
 # Set up application code and install Python dependencies
 COPY sandbox.requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# Create a non-root user
+RUN useradd -m -u 1000 sandbox
+
 COPY local_sandbox_server.py /app/main.py
-RUN mkdir /workspace
+RUN mkdir /workspace && chown sandbox:sandbox /workspace && chown sandbox:sandbox /app/main.py
 
 # Set Flask app environment variables and ports
 ARG UWSGI_CHEAPER
@@ -44,4 +48,5 @@ ENV LISTEN_PORT=6000
 EXPOSE 6000
 
 WORKDIR /app
+USER sandbox
 CMD uwsgi --http 0.0.0.0:${LISTEN_PORT} --master -p ${UWSGI_PROCESSES} --force-cwd /workspace -w main:app
