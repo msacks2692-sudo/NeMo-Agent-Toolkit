@@ -38,11 +38,19 @@ ClassInfo: TypeAlias = type | types.UnionType | tuple["ClassInfo", ...]
 
 # utility for check if string is a valid json string
 def is_valid_json(string):
+    # Try parsing first without replacement as it's the happy path
+    # and avoids creating a new string object in memory.
     try:
-        input_str = string.replace("'", "\"")
-        json.loads(input_str)
+        json.loads(string)
         return True
     except json.JSONDecodeError:
+        if "'" in string:
+            try:
+                # Fallback for Python-style dicts often produced by LLMs
+                json.loads(string.replace("'", "\""))
+                return True
+            except json.JSONDecodeError:
+                pass
         return False
 
 
