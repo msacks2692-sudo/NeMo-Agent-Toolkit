@@ -43,5 +43,14 @@ ENV UWSGI_PROCESSES=$UWSGI_PROCESSES
 ENV LISTEN_PORT=6000
 EXPOSE 6000
 
+# Create a non-root user
+RUN useradd -m -u 1000 sandbox
+
+# Change ownership of the application and workspace directories
+RUN chown -R sandbox:sandbox /app /workspace
+
+# Switch to the non-root user
+USER sandbox
+
 WORKDIR /app
 CMD uwsgi --http 0.0.0.0:${LISTEN_PORT} --master -p ${UWSGI_PROCESSES} --force-cwd /workspace -w main:app
