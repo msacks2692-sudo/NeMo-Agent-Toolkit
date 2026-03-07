@@ -108,6 +108,8 @@ def _extract_status_code(exc: BaseException) -> int | None:
     return None
 
 
+# Cache compiled regexes to avoid recompilation overhead during retries
+@functools.lru_cache(maxsize=32)
 def _pattern_to_regex(pat: str) -> re.Pattern[str]:
     """
     Convert simple wildcard pattern ("4xx", "5*", "40x") to a ^regex$.
