@@ -33,6 +33,9 @@ class CustomMilvusClient:
     def list_collections(self):
         return ["collection1", "collection2"]
 
+    def has_collection(self, collection_name: str):
+        return collection_name in ["collection1", "collection2"]
+
     def describe_collection(self, collection_name: str):
         collection_descriptions = {
             "collection1": {
@@ -178,6 +181,9 @@ class CustomAsyncMilvusClient:
 
     async def list_collections(self):
         return ["collection1", "collection2"]
+
+    async def has_collection(self, collection_name: str):
+        return collection_name in ["collection1", "collection2"]
 
     async def describe_collection(self, collection_name: str):
         collection_descriptions = {
