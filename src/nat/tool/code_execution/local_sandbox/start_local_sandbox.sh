@@ -38,19 +38,23 @@ if [ ! -d "${OUTPUT_DATA_PATH}" ]; then
     mkdir -p "${OUTPUT_DATA_PATH}"
 fi
 
-# Check if the Docker image already exists
-if ! ${DOCKER_COMMAND} images ${SANDBOX_NAME} | grep -q "${SANDBOX_NAME}"; then
-    echo "Docker image not found locally. Building ${SANDBOX_NAME}..."
-    ${DOCKER_COMMAND} build --tag=${SANDBOX_NAME} \
-        --build-arg="UWSGI_PROCESSES=${UWSGI_PROCESSES}" \
-        --build-arg="UWSGI_CHEAPER=${UWSGI_CHEAPER}" \
-        -f Dockerfile.sandbox .
-else
-    echo "Using existing Docker image: ${SANDBOX_NAME}"
+# Cleanup existing container if any to avoid conflicts
+if ${DOCKER_COMMAND} ps -a --format '{{.Names}}' | grep -q "^local-sandbox$"; then
+    echo "Stopping and removing existing container..."
+    ${DOCKER_COMMAND} rm -f local-sandbox
 fi
 
+echo "Building Docker image: ${SANDBOX_NAME}..."
+${DOCKER_COMMAND} build --tag=${SANDBOX_NAME} \
+    --build-arg="UWSGI_PROCESSES=${UWSGI_PROCESSES}" \
+    --build-arg="UWSGI_CHEAPER=${UWSGI_CHEAPER}" \
+    --build-arg="UID=$(id -u)" \
+    --build-arg="GID=$(id -g)" \
+    -f Dockerfile.sandbox .
+
 # Mount the output_data directory directly so files created in container appear in the local directory
-${DOCKER_COMMAND} run --rm -ti --name=local-sandbox \
-  --network=host \
+# Run in detached mode (-d) and map port 6000 explicitly
+${DOCKER_COMMAND} run --rm -d --name=local-sandbox \
+  -p 6000:6000 \
   -v "${OUTPUT_DATA_PATH}:/workspace" \
   ${SANDBOX_NAME}
