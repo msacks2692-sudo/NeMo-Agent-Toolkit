@@ -50,7 +50,9 @@ else
 fi
 
 # Mount the output_data directory directly so files created in container appear in the local directory
+# Security: bind to localhost only to prevent remote access.
+# Do NOT use --network=host as it exposes the container to the host network.
 ${DOCKER_COMMAND} run --rm -ti --name=local-sandbox \
-  --network=host \
+  -p 127.0.0.1:6000:6000 \
   -v "${OUTPUT_DATA_PATH}:/workspace" \
   ${SANDBOX_NAME}
