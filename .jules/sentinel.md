@@ -1,0 +1,4 @@
+## 2023-11-20 - [Red Teaming] Use Cryptographically Secure RNG for Attack Placement
+**Vulnerability:** RedTeamingMiddleware used the standard `random` module (`random.choice`) to randomly select target fields when applying attack payloads.
+**Learning:** Even in non-critical security testing or middleware code, using predictable PRNGs like `random` instead of `secrets` can trigger SAST alerts (CWE-330) and introduce predictability in randomized attack scenarios. Since NAT explicitly recommends `secrets.choice` for security-related configurations or logic in its defense middlewares, red-teaming middlewares should follow the exact same standard.
+**Prevention:** Always use `secrets` (e.g., `secrets.choice`, `secrets.token_urlsafe`) instead of `random` for any randomized logic within security-related modules (defense, red-teaming, or authentication).
