@@ -152,7 +152,7 @@ class WorkflowEvalBuilder(WorkflowBuilder, EvalBuilder):
 
         # Initialize progress tracking for evaluators
         completed_evaluators = []
-        remaining_evaluators = list(config.eval.evaluators.keys())
+        remaining_evaluators = list(config.eval.evaluators)
 
         # Instantiate the evaluators with enhanced error logging
         for name, evaluator_config in config.eval.evaluators.items():

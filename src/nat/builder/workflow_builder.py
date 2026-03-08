@@ -473,7 +473,7 @@ class WorkflowBuilder(Builder, AbstractAsyncContextManager):
         function_group_instances = dict()
 
         for k, v in self._function_groups.items():
-            included_functions.update((await v.instance.get_included_functions()).keys())
+            included_functions.update(await v.instance.get_included_functions())
             function_group_configs[k] = v.config
             function_group_instances[k] = v.instance
 
@@ -656,7 +656,7 @@ class WorkflowBuilder(Builder, AbstractAsyncContextManager):
 
         if (name in self._functions or name in self._function_groups):
             raise ValueError(f"Function `{name}` already exists in the list of functions or function groups")
-        if any(name.startswith(k + FunctionGroup.SEPARATOR) for k in self._function_groups.keys()):
+        if any(name.startswith(k + FunctionGroup.SEPARATOR) for k in self._function_groups):
             raise ValueError(f"A Function name starts with a Function Group name: `{name}`")
 
         build_result = await self._build_function(name=name, config=config)
@@ -672,7 +672,7 @@ class WorkflowBuilder(Builder, AbstractAsyncContextManager):
 
         if (name in self._function_groups or name in self._functions):
             raise ValueError(f"Function group `{name}` already exists in the list of function groups or functions")
-        if any(k.startswith(name + FunctionGroup.SEPARATOR) for k in self._functions.keys()):
+        if any(k.startswith(name + FunctionGroup.SEPARATOR) for k in self._functions):
             raise ValueError(f"A Function name starts with a Function Group name: `{name}`")
 
         # Build the function group

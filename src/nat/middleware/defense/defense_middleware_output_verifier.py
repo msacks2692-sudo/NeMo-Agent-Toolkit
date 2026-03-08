@@ -112,7 +112,7 @@ class OutputVerifierMiddleware(DefenseMiddleware):
         """
         # Remove markdown code blocks
         if "```json" in response_text:
-            response_text = response_text.split("```json")[1].split("```")[0].strip()
+            response_text = response_text.split("```json")[1].split("```", maxsplit=1)[0].strip()
         elif "```" in response_text:
             response_text = response_text.split("```")[1].split("```")[0].strip()
 

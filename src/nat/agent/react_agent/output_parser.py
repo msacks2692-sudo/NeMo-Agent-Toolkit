@@ -89,7 +89,7 @@ class ReActOutputParser(AgentOutputParser):
             return AgentAction(action, tool_input, text)
 
         if includes_answer:
-            return AgentFinish({"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text)
+            return AgentFinish({"output": text.rsplit(FINAL_ANSWER_ACTION, maxsplit=1)[-1].strip()}, text)
 
         if not re.search(r"Action\s*\d*\s*:[\s]*(.*?)", text, re.DOTALL):
             raise ReActOutputParserException(observation=MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE,

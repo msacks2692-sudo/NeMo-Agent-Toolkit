@@ -364,7 +364,7 @@ class FunctionBase(typing.Generic[InputT, StreamingOutputT, SingleOutputT], ABC)
         if (isinstance(value, self.input_schema)):
 
             # Get the first value from the schema object
-            first_key = next(iter(self.input_schema.model_fields.keys()))
+            first_key = next(iter(self.input_schema.model_fields))
 
             return getattr(value, first_key)
 

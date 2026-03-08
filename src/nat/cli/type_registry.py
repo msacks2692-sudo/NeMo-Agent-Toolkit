@@ -533,7 +533,7 @@ class TypeRegistry:
             return self._registered_telemetry_exporters[config_type]
         except KeyError as err:
             raise KeyError(f"Could not find a registered telemetry exporter for config `{config_type}`. "
-                           f"Registered configs: {set(self._registered_telemetry_exporters.keys())}") from err
+                           f"Registered configs: {set(self._registered_telemetry_exporters)}") from err
 
     def get_registered_telemetry_exporters(self) -> list[RegisteredInfo[TelemetryExporterBaseConfig]]:
 
@@ -554,7 +554,7 @@ class TypeRegistry:
             return self._registered_logging_methods[config_type]
         except KeyError as err:
             raise KeyError(f"No logging method found for config `{config_type}`. "
-                           f"Known: {set(self._registered_logging_methods.keys())}") from err
+                           f"Known: {set(self._registered_logging_methods)}") from err
 
     def get_registered_logging_method(self) -> list[RegisteredInfo[LoggingBaseConfig]]:
 
@@ -594,21 +594,21 @@ class TypeRegistry:
             return self._registered_trainer_infos[config_type]
         except KeyError as err:
             raise KeyError(f"Could not find a registered trainer for config `{config_type}`. "
-                           f"Registered configs: {set(self._registered_trainer_infos.keys())}") from err
+                           f"Registered configs: {set(self._registered_trainer_infos)}") from err
 
     def get_trainer_adapter(self, config_type: type[TrainerAdapterConfig]) -> RegisteredTrainerAdapterInfo:
         try:
             return self._registered_trainer_adapter_infos[config_type]
         except KeyError as err:
             raise KeyError(f"Could not find a registered trainer adapter for config `{config_type}`. "
-                           f"Registered configs: {set(self._registered_trainer_adapter_infos.keys())}") from err
+                           f"Registered configs: {set(self._registered_trainer_adapter_infos)}") from err
 
     def get_trajectory_builder(self, config_type: type[TrajectoryBuilderConfig]) -> RegisteredTrajectoryBuilderInfo:
         try:
             return self._registered_trajectory_builder_infos[config_type]
         except KeyError as err:
             raise KeyError(f"Could not find a registered trajectory builder for config `{config_type}`. "
-                           f"Registered configs: {set(self._registered_trajectory_builder_infos.keys())}") from err
+                           f"Registered configs: {set(self._registered_trajectory_builder_infos)}") from err
 
     def get_registered_trainers(self) -> list[RegisteredInfo[TrainerConfig]]:
         return list(self._registered_trainer_infos.values())
@@ -635,7 +635,7 @@ class TypeRegistry:
             return self._registered_front_end_infos[config_type]
         except KeyError as err:
             raise KeyError(f"Could not find a registered front end for config `{config_type}`. "
-                           f"Registered configs: {set(self._registered_front_end_infos.keys())}") from err
+                           f"Registered configs: {set(self._registered_front_end_infos)}") from err
 
     def get_registered_front_ends(self) -> list[RegisteredInfo[FrontEndBaseConfig]]:
 
@@ -657,7 +657,7 @@ class TypeRegistry:
             return self._registered_functions[config_type]
         except KeyError as err:
             raise KeyError(f"Could not find a registered function for config `{config_type}`. "
-                           f"Registered configs: {set(self._registered_functions.keys())}") from err
+                           f"Registered configs: {set(self._registered_functions)}") from err
 
     def get_registered_functions(self) -> list[RegisteredInfo[FunctionBaseConfig]]:
 
@@ -697,7 +697,7 @@ class TypeRegistry:
             return self._registered_function_groups[config_type]
         except KeyError as err:
             raise KeyError(f"Could not find a registered function group for config `{config_type}`. "
-                           f"Registered configs: {set(self._registered_function_groups.keys())}") from err
+                           f"Registered configs: {set(self._registered_function_groups)}") from err
 
     def get_registered_function_groups(self) -> list[RegisteredInfo[FunctionGroupBaseConfig]]:
         """Get all registered function groups.
@@ -740,7 +740,7 @@ class TypeRegistry:
             return self._registered_middleware[config_type]
         except KeyError as err:
             raise KeyError(f"Could not find registered middleware for config `{config_type}`. "
-                           f"Registered configs: {set(self._registered_middleware.keys())}") from err
+                           f"Registered configs: {set(self._registered_middleware)}") from err
 
     def get_registered_middleware(self) -> list[RegisteredInfo[MiddlewareBaseConfig]]:
         """Get all registered middleware.
@@ -766,7 +766,7 @@ class TypeRegistry:
             return self._registered_llm_provider_infos[config_type]
         except KeyError as err:
             raise KeyError(f"Could not find a registered LLM provider for config `{config_type}`. "
-                           f"Registered configs: {set(self._registered_llm_provider_infos.keys())}") from err
+                           f"Registered configs: {set(self._registered_llm_provider_infos)}") from err
 
     def get_registered_llm_providers(self) -> list[RegisteredInfo[LLMBaseConfig]]:
         return list(self._registered_llm_provider_infos.values())
@@ -787,7 +787,7 @@ class TypeRegistry:
             return self._registered_auth_provider_infos[config_type]
         except KeyError as err:
             raise KeyError(f"Could not find a registered Authentication Provider for config `{config_type}`. "
-                           f"Registered configs: {set(self._registered_auth_provider_infos.keys())}") from err
+                           f"Registered configs: {set(self._registered_auth_provider_infos)}") from err
 
     def get_registered_auth_providers(self) -> list[RegisteredInfo[AuthProviderBaseConfig]]:
         return list(self._registered_auth_provider_infos.values())
@@ -814,7 +814,7 @@ class TypeRegistry:
                            f"there is no registered conversion from that LLM provider to LLM framework: "
                            f"{wrapper_type}. "
                            f"Please provide an LLM configuration from one of the following providers: "
-                           f"{set(self._llm_client_provider_to_framework.keys())}") from err
+                           f"{set(self._llm_client_provider_to_framework)}") from err
 
         return client_info
 
@@ -834,7 +834,7 @@ class TypeRegistry:
             return self._registered_embedder_provider_infos[config_type]
         except KeyError as err:
             raise KeyError(f"Could not find a registered Embedder provider for config `{config_type}`. "
-                           f"Registered configs: {set(self._registered_embedder_provider_infos.keys())}") from err
+                           f"Registered configs: {set(self._registered_embedder_provider_infos)}") from err
 
     def get_registered_embedder_providers(self) -> list[RegisteredInfo[EmbedderBaseConfig]]:
 
@@ -863,7 +863,7 @@ class TypeRegistry:
                 f"Wrapper: `{wrapper_type}`. The workflow is requesting a {wrapper_type} Embedder client but "
                 f"there is no registered conversion from that Embedder provider to LLM framework: {wrapper_type}. "
                 "Please provide an Embedder configuration from one of the following providers: "
-                f"{set(self._embedder_client_provider_to_framework.keys())}") from err
+                f"{set(self._embedder_client_provider_to_framework)}") from err
 
         return client_info
 
@@ -883,7 +883,7 @@ class TypeRegistry:
             return self._registered_evaluator_infos[config_type]
         except KeyError as err:
             raise KeyError(f"Could not find a registered Evaluator for config `{config_type}`. "
-                           f"Registered configs: {set(self._registered_evaluator_infos.keys())}") from err
+                           f"Registered configs: {set(self._registered_evaluator_infos)}") from err
 
     def get_registered_evaluators(self) -> list[RegisteredInfo[EvaluatorBaseConfig]]:
 
@@ -905,7 +905,7 @@ class TypeRegistry:
             return self._registered_memory_infos[config_type]
         except KeyError as err:
             raise KeyError(f"Could not find a registered Memory client for config `{config_type}`. "
-                           f"Registered configs: {set(self._registered_memory_infos.keys())}") from err
+                           f"Registered configs: {set(self._registered_memory_infos)}") from err
 
     def get_registered_memorys(self) -> list[RegisteredInfo[MemoryBaseConfig]]:
 
@@ -927,7 +927,7 @@ class TypeRegistry:
             return self._registered_object_store_infos[config_type]
         except KeyError as err:
             raise KeyError(f"Could not find a registered Object Store for config `{config_type}`. "
-                           f"Registered configs: {set(self._registered_object_store_infos.keys())}") from err
+                           f"Registered configs: {set(self._registered_object_store_infos)}") from err
 
     def get_registered_object_stores(self) -> list[RegisteredInfo[ObjectStoreBaseConfig]]:
 
@@ -949,7 +949,7 @@ class TypeRegistry:
             return self._registered_retriever_provider_infos[config_type]
         except KeyError as err:
             raise KeyError(f"Could not find a registered Retriever provider for config `{config_type}`. "
-                           f"Registered configs: {set(self._registered_retriever_provider_infos.keys())}") from err
+                           f"Registered configs: {set(self._registered_retriever_provider_infos)}") from err
 
     def get_registered_retriever_providers(self) -> list[RegisteredInfo[RetrieverBaseConfig]]:
 
@@ -978,7 +978,7 @@ class TypeRegistry:
                 f"Wrapper: `{wrapper_type}`. The workflow is requesting a {wrapper_type} Retriever client but "
                 f"there is no registered conversion from that Retriever provider to LLM framework: {wrapper_type}. "
                 "Please provide a Retriever configuration from one of the following providers: "
-                f"{set(self._retriever_client_provider_to_framework.keys())}") from err
+                f"{set(self._retriever_client_provider_to_framework)}") from err
 
         return client_info
 
@@ -998,7 +998,7 @@ class TypeRegistry:
             return self._registered_tool_wrappers[llm_framework]
         except KeyError as err:
             raise KeyError(f"Could not find a registered tool wrapper for LLM framework `{llm_framework}`. "
-                           f"Registered LLM frameworks: {set(self._registered_tool_wrappers.keys())}") from err
+                           f"Registered LLM frameworks: {set(self._registered_tool_wrappers)}") from err
 
     def register_ttc_strategy(self, info: RegisteredTTCStrategyInfo):
         if (info.config_type in self._registered_ttc_strategies):
@@ -1036,7 +1036,7 @@ class TypeRegistry:
             return self._registered_registry_handler_infos[config_type]
         except KeyError as err:
             raise KeyError(f"Could not find a registered Registry Handler for config `{config_type}`. "
-                           f"Registered configs: {set(self._registered_registry_handler_infos.keys())}") from err
+                           f"Registered configs: {set(self._registered_registry_handler_infos)}") from err
 
     def get_registered_registry_handlers(self) -> list[RegisteredInfo[RegistryHandlerBaseConfig]]:
 
