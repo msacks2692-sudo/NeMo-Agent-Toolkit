@@ -212,8 +212,8 @@ class PerUserWorkflowBuilder(Builder, AbstractAsyncContextManager):
            (name in self._shared_builder._functions) or \
            (name in self._shared_builder._function_groups):
             raise ValueError(f"Function `{name}` already exists in the list of functions or function groups")
-        if any(name.startswith(k + FunctionGroup.SEPARATOR) for k in self._per_user_function_groups.keys()) or \
-            any(name.startswith(k + FunctionGroup.SEPARATOR) for k in self._shared_builder._function_groups.keys()):
+        if any(name.startswith(k + FunctionGroup.SEPARATOR) for k in self._per_user_function_groups) or \
+            any(name.startswith(k + FunctionGroup.SEPARATOR) for k in self._shared_builder._function_groups):
             raise ValueError(f"A Function name starts with a Function Group name: `{name}`")
 
         registration = self._registry.get_function(type(config))
@@ -275,8 +275,8 @@ class PerUserWorkflowBuilder(Builder, AbstractAsyncContextManager):
             (name in self._shared_builder._function_groups) or \
             (name in self._shared_builder._functions):
             raise ValueError(f"Function group `{name}` already exists in the list of function groups or functions")
-        if any(k.startswith(name + FunctionGroup.SEPARATOR) for k in self._per_user_functions.keys()) or \
-           any(k.startswith(name + FunctionGroup.SEPARATOR) for k in self._shared_builder._functions.keys()):
+        if any(k.startswith(name + FunctionGroup.SEPARATOR) for k in self._per_user_functions) or \
+           any(k.startswith(name + FunctionGroup.SEPARATOR) for k in self._shared_builder._functions):
             raise ValueError(f"A Function name starts with a Function Group name: `{name}`")
 
         registration = self._registry.get_function_group(type(config))
@@ -707,9 +707,9 @@ class PerUserWorkflowBuilder(Builder, AbstractAsyncContextManager):
         # These will be skipped when populating function_configs and all_functions
         included_functions: set[str] = set()
         for configured_fg in self._shared_builder._function_groups.values():
-            included_functions.update((await configured_fg.instance.get_included_functions()).keys())
+            included_functions.update(await configured_fg.instance.get_included_functions())
         for configured_fg in self._per_user_function_groups.values():
-            included_functions.update((await configured_fg.instance.get_included_functions()).keys())
+            included_functions.update(await configured_fg.instance.get_included_functions())
 
         # Collect all functions (per-user + shared), excluding those already in function groups
         all_functions = {}
