@@ -28,8 +28,8 @@ The middleware supports:
 from __future__ import annotations
 
 import logging
-import random
 import re
+import secrets
 from typing import Any
 from typing import Literal
 from typing import cast
@@ -229,7 +229,8 @@ class RedTeamingMiddleware(FunctionMiddleware):
         if self._target_field_resolution_strategy == "error":
             raise ValueError(f"Multiple matches found for target_field: {self._target_field}")
         elif self._target_field_resolution_strategy == "random":
-            return [random.choice(matches)]
+            # Use secrets.choice instead of random.choice for cryptographically secure randomness
+            return [secrets.choice(matches)]
         elif self._target_field_resolution_strategy == "first":
             return [matches[0]]
         elif self._target_field_resolution_strategy == "last":
