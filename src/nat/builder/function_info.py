@@ -60,7 +60,7 @@ def _validate_single_fn(single_fn: SingleCallableT | None) -> tuple[type, type]:
     if len(sig.parameters) != 1:
         raise ValueError("single_fn must have exactly one parameter")
 
-    if (sig.parameters[list(sig.parameters.keys())[0]].annotation == sig.empty):
+    if (sig.parameters[next(iter(sig.parameters))].annotation == sig.empty):
         raise ValueError("single_fn must have an input annotation")
 
     if sig.return_annotation == sig.empty:
@@ -223,7 +223,7 @@ class FunctionDescriptor:
             is_input_typed = False
             input_schema = NoneType
         elif (arg_count == 1):
-            first_annotation = sig.parameters[list(sig.parameters.keys())[0]].annotation
+            first_annotation = sig.parameters[next(iter(sig.parameters))].annotation
 
             is_input_typed = first_annotation != sig.empty
 
@@ -599,7 +599,7 @@ class FunctionInfo:
                         break
 
                 if (stream_arg):
-                    single_input_type = sig.parameters[list(sig.parameters.keys())[0]].annotation
+                    single_input_type = sig.parameters[next(iter(sig.parameters))].annotation
                     single_output_type = stream_arg.single_output_type
 
                     async def _stream_to_single_output(message: single_input_type) -> single_output_type:
