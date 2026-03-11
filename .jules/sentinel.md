@@ -1,0 +1,4 @@
+## 2025-05-18 - [MEDIUM] Fix weak random number generation
+**Vulnerability:** Used the standard `random` module (`random.choice(matches)`) to select a target field resolution strategy in `src/nat/middleware/red_teaming/red_teaming_middleware.py`.
+**Learning:** The `random` module is a pseudo-random number generator that is not cryptographically secure, which could lead to predictable behavior in security/defense modules such as the red teaming middleware.
+**Prevention:** Always use cryptographically secure pseudo-random number generators like `secrets` (e.g., `secrets.choice()`) for any security-related logic or configurations.
