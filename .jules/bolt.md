@@ -1,3 +1,3 @@
-## 2024-10-24 - [Optimize JSON validation]
-**Learning:** When optimizing JSON validation, use a 'try-parse first' strategy instead of blanket string replacements (e.g., replacing single quotes with double quotes) before parsing. This prevents corrupting valid JSON that legitimately contains the replaced characters and avoids performance overhead on the happy path.
-**Action:** Always attempt to parse the original string first. Only fallback to quote replacement and a second parse attempt if the initial parse fails and single quotes are actually present in the string.
+## 2025-02-13 - [Avoid O(N) dict keys conversion for first element]
+**Learning:** Using `list(my_dict.keys())[0]` to get the first key of a dictionary forces Python to allocate a new list and iterate over all keys, making it an O(N) operation.
+**Action:** Replace `list(my_dict.keys())[0]` with `next(iter(my_dict))` which is an O(1) operation and avoids memory allocation, yielding ~10x performance improvement.

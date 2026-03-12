@@ -128,7 +128,7 @@ class RAGEvaluator:
 
         # Convert from list of dicts to dict of lists, coercing NaN/None to 0.0 for average calculation
         scores_dict = {metric: [_nan_to_zero(score.get(metric)) for score in scores] for metric in scores[0]}
-        first_metric_name = list(scores_dict.keys())[0] if scores_dict else None
+        first_metric_name = next(iter(scores_dict)) if scores_dict else None
 
         # Compute the average of each metric using cleaned scores (NaN/None -> 0.0)
         average_scores = {
@@ -136,7 +136,7 @@ class RAGEvaluator:
             for metric, values in scores_dict.items()
         }
 
-        first_avg_score = average_scores.get(list(scores_dict.keys())[0], 0.0)
+        first_avg_score = average_scores.get(next(iter(scores_dict)), 0.0) if scores_dict else 0.0
         if isinstance(first_avg_score, float) and math.isnan(first_avg_score):
             first_avg_score = 0.0
 
