@@ -619,7 +619,7 @@ class TestTraceAdapterRegistryEdgeCases:
         registered = TraceAdapterRegistry.list_registered_types()
         assert MockSourceTypeA in registered
         # The exact type depends on Python version, but should be the Optional type
-        registered_type = list(registered[MockSourceTypeA].keys())[0]
+        registered_type = next(iter(registered[MockSourceTypeA]))
         assert ("Optional" in str(registered_type) or "Union" in str(registered_type)
                 or registered_type == type(None) | MockTargetType1)
 

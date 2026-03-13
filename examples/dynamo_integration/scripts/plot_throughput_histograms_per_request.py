@@ -589,7 +589,7 @@ def create_histogram_plots(df: pd.DataFrame, output_dir: Path, llm_call_df: pd.D
 
         # Add stats box for single job only (multi-job uses table legend)
         if not multi_job and job_stats:
-            stats = list(job_stats.values())[0]
+            stats = next(iter(job_stats.values()))
             stats_text = (f'n={stats["n"]}\n'
                           f'mean={stats["mean"]:.2f}\n'
                           f'median={stats["median"]:.2f}\n'
