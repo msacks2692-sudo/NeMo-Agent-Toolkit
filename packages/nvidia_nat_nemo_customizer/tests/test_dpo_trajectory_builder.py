@@ -477,7 +477,7 @@ class TestDPOTrajectoryBuilder:
         candidates_by_turn = dpo_builder._collect_candidates(mock_eval_result)
 
         assert len(candidates_by_turn) == 1
-        turn_key = list(candidates_by_turn.keys())[0]
+        turn_key = next(iter(candidates_by_turn))
         assert "example_1" in turn_key
         assert "turn_0" in turn_key
         assert len(candidates_by_turn[turn_key]) == 3
