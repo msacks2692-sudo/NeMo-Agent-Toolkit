@@ -551,15 +551,15 @@ class FunctionGroup:
         excluded = set(self._config.exclude)
         included = set(await filter_fn(list(self._functions.keys())))
 
+        import asyncio
+
+        names = [n for n in self._functions if n not in excluded and n in included]
+        inclusion_results = await asyncio.gather(*(self._fn_should_be_included(name) for name in names))
+
         result = {}
-        for name in self._functions:
-            if name in excluded:
-                continue
-            if not await self._fn_should_be_included(name):
-                continue
-            if name not in included:
-                continue
-            result[self._get_fn_name(name)] = self._functions[name]
+        for name, is_included in zip(names, inclusion_results):
+            if is_included:
+                result[self._get_fn_name(name)] = self._functions[name]
 
         return result
 
@@ -643,14 +643,20 @@ class FunctionGroup:
         excluded = set(self._config.exclude)
         included = set(await filter_fn(list(self._functions.keys())))
 
+        import asyncio
+
+        names_to_check = [n for n in self._functions if n not in excluded and n in included]
+        inclusion_results = await asyncio.gather(*(self._fn_should_be_included(name) for name in names_to_check))
+        inclusion_map = dict(zip(names_to_check, inclusion_results))
+
         result = {}
         for name in self._functions:
             is_excluded = False
             if name in excluded:
                 is_excluded = True
-            elif not await self._fn_should_be_included(name):
-                is_excluded = True
             elif name not in included:
+                is_excluded = True
+            elif not inclusion_map.get(name, False):
                 is_excluded = True
 
             if is_excluded:
@@ -700,9 +706,15 @@ class FunctionGroup:
                 filter_fn = self._filter_fn
 
         included = set(await filter_fn(list(self._config.include)))
+
+        import asyncio
+
+        included_list = list(included)
+        inclusion_results = await asyncio.gather(*(self._fn_should_be_included(name) for name in included_list))
+
         result = {}
-        for name in included:
-            if await self._fn_should_be_included(name):
+        for name, is_included in zip(included_list, inclusion_results):
+            if is_included:
                 result[self._get_fn_name(name)] = self._functions[name]
         return result
 
@@ -738,9 +750,15 @@ class FunctionGroup:
                 filter_fn = self._filter_fn
 
         included = set(await filter_fn(list(self._functions.keys())))
+
+        import asyncio
+
+        included_list = list(included)
+        inclusion_results = await asyncio.gather(*(self._fn_should_be_included(name) for name in included_list))
+
         result = {}
-        for name in included:
-            if await self._fn_should_be_included(name):
+        for name, is_included in zip(included_list, inclusion_results):
+            if is_included:
                 result[self._get_fn_name(name)] = self._functions[name]
         return result
 
