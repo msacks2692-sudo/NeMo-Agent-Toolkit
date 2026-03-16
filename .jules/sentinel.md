@@ -1,0 +1,4 @@
+## 2024-05-24 - Insecure Random Number Generation in Security Middleware
+**Vulnerability:** The Red Teaming middleware used the standard `random` module for field resolution strategy (`random.choice(matches)`).
+**Learning:** The `random` module generates pseudo-random numbers that are predictable and not cryptographically secure. When this is used in security-related contexts, like attack payloads or fuzzing logic, predictable random choices could potentially undermine the randomness of the security tests and allow attackers to predict behavior if they have insights into the random seed.
+**Prevention:** Always use the `secrets` module (e.g., `secrets.choice()`) for random number generation in security-related components, authentication tokens, cryptography, or fuzzing logic that requires unpredictability.
