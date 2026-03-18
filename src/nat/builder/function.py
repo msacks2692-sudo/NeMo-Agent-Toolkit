@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import logging
 import re
 import typing
@@ -552,14 +553,20 @@ class FunctionGroup:
         included = set(await filter_fn(list(self._functions.keys())))
 
         result = {}
-        for name in self._functions:
+        async def process_func(name: str) -> tuple[str, Function] | None:
             if name in excluded:
-                continue
+                return None
             if not await self._fn_should_be_included(name):
-                continue
+                return None
             if name not in included:
-                continue
-            result[self._get_fn_name(name)] = self._functions[name]
+                return None
+            return name, self._functions[name]
+
+        tasks = [process_func(name) for name in self._functions]
+        results = await asyncio.gather(*tasks)
+        for res in results:
+            if res:
+                result[self._get_fn_name(res[0])] = res[1]
 
         return result
 
@@ -644,7 +651,7 @@ class FunctionGroup:
         included = set(await filter_fn(list(self._functions.keys())))
 
         result = {}
-        for name in self._functions:
+        async def process_func(name: str) -> tuple[str, Function] | None:
             is_excluded = False
             if name in excluded:
                 is_excluded = True
@@ -654,7 +661,14 @@ class FunctionGroup:
                 is_excluded = True
 
             if is_excluded:
-                result[self._get_fn_name(name)] = self._functions[name]
+                return name, self._functions[name]
+            return None
+
+        tasks = [process_func(name) for name in self._functions]
+        results = await asyncio.gather(*tasks)
+        for res in results:
+            if res:
+                result[self._get_fn_name(res[0])] = res[1]
 
         return result
 
@@ -701,9 +715,16 @@ class FunctionGroup:
 
         included = set(await filter_fn(list(self._config.include)))
         result = {}
-        for name in included:
+        async def process_func(name: str) -> tuple[str, Function] | None:
             if await self._fn_should_be_included(name):
-                result[self._get_fn_name(name)] = self._functions[name]
+                return name, self._functions[name]
+            return None
+
+        tasks = [process_func(name) for name in included]
+        results = await asyncio.gather(*tasks)
+        for res in results:
+            if res:
+                result[self._get_fn_name(res[0])] = res[1]
         return result
 
     async def get_all_functions(
@@ -739,9 +760,16 @@ class FunctionGroup:
 
         included = set(await filter_fn(list(self._functions.keys())))
         result = {}
-        for name in included:
+        async def process_func(name: str) -> tuple[str, Function] | None:
             if await self._fn_should_be_included(name):
-                result[self._get_fn_name(name)] = self._functions[name]
+                return name, self._functions[name]
+            return None
+
+        tasks = [process_func(name) for name in included]
+        results = await asyncio.gather(*tasks)
+        for res in results:
+            if res:
+                result[self._get_fn_name(res[0])] = res[1]
         return result
 
     def set_filter_fn(self, filter_fn: Callable[[Sequence[str]], Awaitable[Sequence[str]]]):
