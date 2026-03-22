@@ -12,6 +12,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import ast
+import operator
 import os
 from typing import Any
 
@@ -37,9 +39,30 @@ def calculator(expression: str) -> str:
     Returns:
         The result of the calculation as a string
     """
+    allowed_operators = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        # ast.Pow intentionally excluded to prevent DoS via CPU exhaustion
+        ast.BitXor: operator.xor,
+        ast.USub: operator.neg,
+    }
+
+    def eval_node(node):
+        if isinstance(node, ast.Constant):
+            return node.value
+        elif isinstance(node, ast.BinOp):
+            return allowed_operators[type(node.op)](eval_node(node.left), eval_node(node.right))
+        elif isinstance(node, ast.UnaryOp):
+            return allowed_operators[type(node.op)](eval_node(node.operand))
+        else:
+            raise TypeError(f"Unsupported operation: {type(node).__name__}")
+
     try:
         # Safely evaluate the expression
-        result = eval(expression)
+        tree = ast.parse(expression, mode='eval')
+        result = eval_node(tree.body)
         return str(result)
     except Exception as e:
         return f"Error calculating expression: {str(e)}"
