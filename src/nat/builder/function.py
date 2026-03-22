@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import logging
 import re
 import typing
@@ -551,15 +552,22 @@ class FunctionGroup:
         excluded = set(self._config.exclude)
         included = set(await filter_fn(list(self._functions.keys())))
 
+        # Synchronously pre-filter functions before async checks
+        candidates = [
+            name for name in self._functions
+            if name not in excluded and name in included
+        ]
+
+        if not candidates:
+            return {}
+
+        # Parallelize the async per-function checks
+        checks = await asyncio.gather(*(self._fn_should_be_included(name) for name in candidates))
+
         result = {}
-        for name in self._functions:
-            if name in excluded:
-                continue
-            if not await self._fn_should_be_included(name):
-                continue
-            if name not in included:
-                continue
-            result[self._get_fn_name(name)] = self._functions[name]
+        for name, should_include in zip(candidates, checks):
+            if should_include:
+                result[self._get_fn_name(name)] = self._functions[name]
 
         return result
 
@@ -643,17 +651,24 @@ class FunctionGroup:
         excluded = set(self._config.exclude)
         included = set(await filter_fn(list(self._functions.keys())))
 
-        result = {}
-        for name in self._functions:
-            is_excluded = False
-            if name in excluded:
-                is_excluded = True
-            elif not await self._fn_should_be_included(name):
-                is_excluded = True
-            elif name not in included:
-                is_excluded = True
+        # Synchronously identify functions that are excluded
+        sync_excluded = [name for name in self._functions if name in excluded or name not in included]
 
-            if is_excluded:
+        # For the rest, we need to check async conditions
+        candidates = [name for name in self._functions if name not in excluded and name in included]
+
+        checks = []
+        if candidates:
+            checks = await asyncio.gather(*(self._fn_should_be_included(name) for name in candidates))
+
+        result = {}
+        # Add functions that were excluded synchronously
+        for name in sync_excluded:
+            result[self._get_fn_name(name)] = self._functions[name]
+
+        # Add functions that were excluded asynchronously
+        for name, should_include in zip(candidates, checks):
+            if not should_include:
                 result[self._get_fn_name(name)] = self._functions[name]
 
         return result
@@ -699,10 +714,16 @@ class FunctionGroup:
             else:
                 filter_fn = self._filter_fn
 
-        included = set(await filter_fn(list(self._config.include)))
+        included = list(set(await filter_fn(list(self._config.include))))
+
+        if not included:
+            return {}
+
+        checks = await asyncio.gather(*(self._fn_should_be_included(name) for name in included))
+
         result = {}
-        for name in included:
-            if await self._fn_should_be_included(name):
+        for name, should_include in zip(included, checks):
+            if should_include:
                 result[self._get_fn_name(name)] = self._functions[name]
         return result
 
@@ -737,10 +758,16 @@ class FunctionGroup:
             else:
                 filter_fn = self._filter_fn
 
-        included = set(await filter_fn(list(self._functions.keys())))
+        included = list(set(await filter_fn(list(self._functions.keys()))))
+
+        if not included:
+            return {}
+
+        checks = await asyncio.gather(*(self._fn_should_be_included(name) for name in included))
+
         result = {}
-        for name in included:
-            if await self._fn_should_be_included(name):
+        for name, should_include in zip(included, checks):
+            if should_include:
                 result[self._get_fn_name(name)] = self._functions[name]
         return result
 
