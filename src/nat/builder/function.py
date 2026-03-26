@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import logging
 import re
 import typing
@@ -551,15 +552,18 @@ class FunctionGroup:
         excluded = set(self._config.exclude)
         included = set(await filter_fn(list(self._functions.keys())))
 
+        # Pre-filter names that can be excluded synchronously
+        valid_names = [name for name in self._functions if name not in excluded and name in included]
+
+        async def check_name(name: str) -> str | None:
+            return name if await self._fn_should_be_included(name) else None
+
+        results = await asyncio.gather(*(check_name(name) for name in valid_names))
+
         result = {}
-        for name in self._functions:
-            if name in excluded:
-                continue
-            if not await self._fn_should_be_included(name):
-                continue
-            if name not in included:
-                continue
-            result[self._get_fn_name(name)] = self._functions[name]
+        for name in results:
+            if name is not None:
+                result[self._get_fn_name(name)] = self._functions[name]
 
         return result
 
@@ -643,17 +647,22 @@ class FunctionGroup:
         excluded = set(self._config.exclude)
         included = set(await filter_fn(list(self._functions.keys())))
 
-        result = {}
-        for name in self._functions:
+        async def get_exclusion_status(name: str) -> str | None:
             is_excluded = False
             if name in excluded:
                 is_excluded = True
-            elif not await self._fn_should_be_included(name):
-                is_excluded = True
             elif name not in included:
                 is_excluded = True
+            elif not await self._fn_should_be_included(name):
+                is_excluded = True
 
-            if is_excluded:
+            return name if is_excluded else None
+
+        results = await asyncio.gather(*(get_exclusion_status(name) for name in self._functions))
+
+        result = {}
+        for name in results:
+            if name is not None:
                 result[self._get_fn_name(name)] = self._functions[name]
 
         return result
@@ -699,11 +708,21 @@ class FunctionGroup:
             else:
                 filter_fn = self._filter_fn
 
-        included = set(await filter_fn(list(self._config.include)))
+        included_names = set(await filter_fn(list(self._config.include)))
+
+        # Pre-filter names that actually exist in the group
+        valid_names = [name for name in included_names if name in self._functions]
+
+        async def check_name(name: str) -> str | None:
+            return name if await self._fn_should_be_included(name) else None
+
+        results = await asyncio.gather(*(check_name(name) for name in valid_names))
+
         result = {}
-        for name in included:
-            if await self._fn_should_be_included(name):
+        for name in results:
+            if name is not None:
                 result[self._get_fn_name(name)] = self._functions[name]
+
         return result
 
     async def get_all_functions(
@@ -737,11 +756,21 @@ class FunctionGroup:
             else:
                 filter_fn = self._filter_fn
 
-        included = set(await filter_fn(list(self._functions.keys())))
+        included_names = set(await filter_fn(list(self._functions.keys())))
+
+        # Pre-filter names to avoid checking ones not included anyway
+        valid_names = [name for name in included_names if name in self._functions]
+
+        async def check_name(name: str) -> str | None:
+            return name if await self._fn_should_be_included(name) else None
+
+        results = await asyncio.gather(*(check_name(name) for name in valid_names))
+
         result = {}
-        for name in included:
-            if await self._fn_should_be_included(name):
+        for name in results:
+            if name is not None:
                 result[self._get_fn_name(name)] = self._functions[name]
+
         return result
 
     def set_filter_fn(self, filter_fn: Callable[[Sequence[str]], Awaitable[Sequence[str]]]):
