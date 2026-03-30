@@ -24,6 +24,7 @@ from urllib.request import url2pathname
 import click
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
+from jinja2 import select_autoescape
 
 logger = logging.getLogger(__name__)
 
@@ -253,7 +254,10 @@ def create_command(workflow_name: str, install: bool, workflow_dir: str, descrip
         data_dir.mkdir(parents=True)
 
         # Initialize Jinja2 environment
-        env = Environment(loader=FileSystemLoader(str(template_dir)))
+        env = Environment(
+            loader=FileSystemLoader(str(template_dir)),
+            autoescape=select_autoescape()
+        )
         editable = get_repo_root() is not None
 
         if editable:

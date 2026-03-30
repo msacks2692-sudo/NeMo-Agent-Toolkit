@@ -1,0 +1,4 @@
+## 2024-03-30 - Fix Jinja2 XSS Vulnerability
+**Vulnerability:** Jinja2 environment initialized without auto-escaping (`autoescape=False` by default) in `src/nat/cli/commands/workflow/workflow_commands.py`, leading to potential Cross-Site Scripting (XSS) via Ruff S701.
+**Learning:** Using `autoescape=select_autoescape()` is the correct and safe pattern for this codebase, as it mitigates XSS vulnerabilities (S701) by properly escaping `.html`, `.htm`, and `.xml` files by default, while seamlessly preserving functionality for rendering non-HTML templates like `.py.j2` or `.toml.j2` (which don't need escaping) without breaking them.
+**Prevention:** Always initialize Jinja2 `Environment` with `autoescape=select_autoescape()` even when the primary target is generating Python or TOML configuration files to satisfy SAST checks and secure the application long-term.
