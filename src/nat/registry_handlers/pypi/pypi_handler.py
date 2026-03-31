@@ -95,7 +95,7 @@ class PypiRegistryHandler(AbstractRegistryHandler):
     def _upload_to_pypi(self, wheel_path: str) -> None:
 
         return subprocess.run(
-            ["twine", "upload", "--repository-url", f"{self._endpoint}/{self._publish_route}", f"{wheel_path}"],
+            ["twine", "upload", "--repository-url", f"{self._endpoint}/{self._publish_route}", "--", f"{wheel_path}"],
             check=True)
 
     @asynccontextmanager

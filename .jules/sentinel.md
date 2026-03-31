@@ -1,0 +1,4 @@
+## 2024-05-24 - [Fix Argument Injection in subprocess call]
+**Vulnerability:** A variable (`wheel_path`) was passed as the last element of a command array in `subprocess.run` without a preceding `--` to signify the end of command options. If the variable starts with a hyphen (e.g., `-O` or `--config`), the executable (`twine`) will misinterpret it as an option flag, potentially leading to unintended behavior or arbitrary file reads.
+**Learning:** Even when passing arguments to `subprocess.run` as a list (which prevents shell injection), argument injection is still possible if untrusted input can be interpreted as a command-line flag.
+**Prevention:** Always use `--` to demarcate the end of options before passing user-controlled or variable positional arguments (like file paths) to CLI tools in `subprocess`.
