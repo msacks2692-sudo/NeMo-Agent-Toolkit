@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import logging
 import re
 import typing
@@ -552,14 +553,14 @@ class FunctionGroup:
         included = set(await filter_fn(list(self._functions.keys())))
 
         result = {}
-        for name in self._functions:
-            if name in excluded:
-                continue
-            if not await self._fn_should_be_included(name):
-                continue
-            if name not in included:
-                continue
-            result[self._get_fn_name(name)] = self._functions[name]
+
+        candidates = [name for name in self._functions if name not in excluded and name in included]
+        inclusion_results = await asyncio.gather(*[self._fn_should_be_included(name) for name in candidates])
+        candidate_inclusion = dict(zip(candidates, inclusion_results, strict=True))
+
+        for name in candidates:
+            if candidate_inclusion[name]:
+                result[self._get_fn_name(name)] = self._functions[name]
 
         return result
 
