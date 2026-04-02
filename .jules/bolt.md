@@ -1,3 +1,3 @@
-## 2024-10-24 - [Optimize JSON validation]
-**Learning:** When optimizing JSON validation, use a 'try-parse first' strategy instead of blanket string replacements (e.g., replacing single quotes with double quotes) before parsing. This prevents corrupting valid JSON that legitimately contains the replaced characters and avoids performance overhead on the happy path.
-**Action:** Always attempt to parse the original string first. Only fallback to quote replacement and a second parse attempt if the initial parse fails and single quotes are actually present in the string.
+## 2024-04-02 - Parallelized async filters in FunctionGroup
+**Learning:** Sequential `await` calls inside for-loops evaluating async dynamic filters (like `_fn_should_be_included`) cause severe linear time blocking, especially when filtering 100+ functions. Using `asyncio.gather` for parallel processing dramatically speeds this up. However, evaluating every candidate in parallel is wasteful. Pre-filtering the candidates using synchronous, $O(1)$ set lookups (e.g., `name in included and name not in excluded`) before calling `gather` provides a significant micro-optimization.
+**Action:** When filtering lists using an async predicate, always pre-filter with synchronous conditions first, then use `asyncio.gather` for the remaining expensive async checks.
