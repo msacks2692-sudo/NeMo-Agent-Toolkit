@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import logging
 import re
 import typing
@@ -551,15 +552,14 @@ class FunctionGroup:
         excluded = set(self._config.exclude)
         included = set(await filter_fn(list(self._functions.keys())))
 
+        candidates = [name for name in self._functions if name not in excluded and name in included]
+        # Bolt performance optimization: Process filter functions concurrently instead of sequentially
+        filter_results = await asyncio.gather(*(self._fn_should_be_included(name) for name in candidates))
+
         result = {}
-        for name in self._functions:
-            if name in excluded:
-                continue
-            if not await self._fn_should_be_included(name):
-                continue
-            if name not in included:
-                continue
-            result[self._get_fn_name(name)] = self._functions[name]
+        for name, should_include in zip(candidates, filter_results, strict=True):
+            if should_include:
+                result[self._get_fn_name(name)] = self._functions[name]
 
         return result
 
@@ -643,17 +643,20 @@ class FunctionGroup:
         excluded = set(self._config.exclude)
         included = set(await filter_fn(list(self._functions.keys())))
 
+        candidates_to_check = []
         result = {}
-        for name in self._functions:
-            is_excluded = False
-            if name in excluded:
-                is_excluded = True
-            elif not await self._fn_should_be_included(name):
-                is_excluded = True
-            elif name not in included:
-                is_excluded = True
 
-            if is_excluded:
+        for name in self._functions:
+            if name in excluded or name not in included:
+                result[self._get_fn_name(name)] = self._functions[name]
+            else:
+                candidates_to_check.append(name)
+
+        # Bolt performance optimization: Process filter functions concurrently instead of sequentially
+        filter_results = await asyncio.gather(*(self._fn_should_be_included(name) for name in candidates_to_check))
+
+        for name, should_include in zip(candidates_to_check, filter_results, strict=True):
+            if not should_include:
                 result[self._get_fn_name(name)] = self._functions[name]
 
         return result
@@ -700,9 +703,14 @@ class FunctionGroup:
                 filter_fn = self._filter_fn
 
         included = set(await filter_fn(list(self._config.include)))
+
+        candidates = list(included)
+        # Bolt performance optimization: Process filter functions concurrently instead of sequentially
+        filter_results = await asyncio.gather(*(self._fn_should_be_included(name) for name in candidates))
+
         result = {}
-        for name in included:
-            if await self._fn_should_be_included(name):
+        for name, should_include in zip(candidates, filter_results, strict=True):
+            if should_include:
                 result[self._get_fn_name(name)] = self._functions[name]
         return result
 
@@ -738,9 +746,14 @@ class FunctionGroup:
                 filter_fn = self._filter_fn
 
         included = set(await filter_fn(list(self._functions.keys())))
+
+        candidates = list(included)
+        # Bolt performance optimization: Process filter functions concurrently instead of sequentially
+        filter_results = await asyncio.gather(*(self._fn_should_be_included(name) for name in candidates))
+
         result = {}
-        for name in included:
-            if await self._fn_should_be_included(name):
+        for name, should_include in zip(candidates, filter_results, strict=True):
+            if should_include:
                 result[self._get_fn_name(name)] = self._functions[name]
         return result
 
