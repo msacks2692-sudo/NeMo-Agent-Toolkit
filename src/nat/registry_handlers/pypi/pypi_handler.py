@@ -123,18 +123,18 @@ class PypiRegistryHandler(AbstractRegistryHandler):
                 else:
                     versioned_packages.append(package.whl_path)
 
-            versioned_packages_str = " ".join(versioned_packages)
-
-            result = subprocess.run([
+            cmd = [
                 "uv",
                 "pip",
                 "install",
                 "--prerelease=allow",
                 "--index-url",
                 f"{self._endpoint}/{self._pull_route}/",
-                versioned_packages_str
-            ],
-                                    check=True)
+                "--"
+            ]
+            cmd.extend(versioned_packages)
+
+            result = subprocess.run(cmd, check=True)
 
             result.check_returncode()
 
