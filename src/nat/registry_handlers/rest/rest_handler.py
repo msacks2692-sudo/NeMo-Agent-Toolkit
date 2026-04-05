@@ -136,7 +136,7 @@ class RestRegistryHandler(AbstractRegistryHandler):
 
                 whl_paths.append(whl_path)
 
-            cmd = ["uv", "pip", "install"]
+            cmd = ["uv", "pip", "install", "--"]
             cmd.extend(whl_paths)
             result = subprocess.run(cmd, check=True)
             result.check_returncode()
