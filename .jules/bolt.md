@@ -1,3 +1,6 @@
 ## 2024-10-24 - [Optimize JSON validation]
 **Learning:** When optimizing JSON validation, use a 'try-parse first' strategy instead of blanket string replacements (e.g., replacing single quotes with double quotes) before parsing. This prevents corrupting valid JSON that legitimately contains the replaced characters and avoids performance overhead on the happy path.
 **Action:** Always attempt to parse the original string first. Only fallback to quote replacement and a second parse attempt if the initial parse fails and single quotes are actually present in the string.
+## 2026-04-09 - [Pre-compile Regexes]
+**Learning:** When optimizing repetitive validation checks, pre-compiling regular expressions using `re.compile` avoids the overhead of internal dictionary lookups associated with repeated `re.match` calls. Always add explicit code comments to explain *why* such micro-optimizations are necessary (e.g., to eliminate cache lookup overhead during frequent execution paths).
+**Action:** Always verify that regular expressions used in hot loops or frequently called initialization methods (like `add_function`) are pre-compiled at the module level. Add an explanatory comment to ensure the optimization context is clear to future reviewers.
