@@ -45,6 +45,10 @@ _T = typing.TypeVar("_T")
 
 logger = logging.getLogger(__name__)
 
+# Pre-compile the regex to optimize performance during repetitive function registrations.
+# This eliminates the overhead of compiling or fetching from cache in re.match on every call.
+_VALID_FUNCTION_NAME_REGEX = re.compile(r"^[a-zA-Z0-9_.-]+$")
+
 
 class Function(FunctionBase[InputT, StreamingOutputT, SingleOutputT], ABC):
 
@@ -486,7 +490,7 @@ class FunctionGroup:
         """
         if not name.strip():
             raise ValueError("Function name cannot be empty or blank")
-        if not re.match(r"^[a-zA-Z0-9_.-]+$", name):
+        if not _VALID_FUNCTION_NAME_REGEX.match(name):
             raise ValueError(
                 f"Function name can only contain letters, numbers, underscores, periods, and hyphens: {name}")
         if name in self._functions:
