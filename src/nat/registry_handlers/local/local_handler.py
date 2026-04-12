@@ -154,7 +154,7 @@ class LocalRegistryHandler(AbstractRegistryHandler):
 
         try:
             for package_name in packages.packages:
-                result = subprocess.run(["uv", "pip", "uninstall", package_name.name], check=True)
+                result = subprocess.run(["uv", "pip", "uninstall", "--", package_name.name], check=True)
                 result.check_returncode()
 
             validated_remove_response = RemoveResponse(status={
