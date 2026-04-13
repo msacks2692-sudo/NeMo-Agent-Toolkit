@@ -129,14 +129,14 @@ class RestRegistryHandler(AbstractRegistryHandler):
 
             for package in validated_pull_response.packages:
                 whl_bytes = base64.b64decode(package.whl)
-                whl_path = os.path.join(tmp_dir, package.whl_name)
+                whl_path = os.path.join(tmp_dir, os.path.basename(package.whl_name))
 
                 with open(whl_path, "wb") as f:
                     f.write(whl_bytes)
 
                 whl_paths.append(whl_path)
 
-            cmd = ["uv", "pip", "install"]
+            cmd = ["uv", "pip", "install", "--"]
             cmd.extend(whl_paths)
             result = subprocess.run(cmd, check=True)
             result.check_returncode()
