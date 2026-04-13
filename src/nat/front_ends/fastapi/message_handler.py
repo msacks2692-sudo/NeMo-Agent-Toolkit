@@ -57,6 +57,9 @@ from nat.runtime.session import SessionManager
 
 logger = logging.getLogger(__name__)
 
+_CHAT_WORKFLOW_TYPES = (WorkflowSchemaType.CHAT, WorkflowSchemaType.CHAT_STREAM)
+_GENERATE_WORKFLOW_TYPES = (WorkflowSchemaType.GENERATE, WorkflowSchemaType.GENERATE_STREAM)
+
 
 class WebSocketMessageHandler:
 
@@ -158,10 +161,10 @@ class WebSocketMessageHandler:
         """
         Processes a WebSocketUserMessage based on schema type.
         """
-        if self._workflow_schema_type in [WorkflowSchemaType.CHAT, WorkflowSchemaType.CHAT_STREAM]:
+        if self._workflow_schema_type in _CHAT_WORKFLOW_TYPES:
             return ChatRequest(**user_content.content.model_dump(include={"messages"}))
 
-        elif self._workflow_schema_type in [WorkflowSchemaType.GENERATE, WorkflowSchemaType.GENERATE_STREAM]:
+        elif self._workflow_schema_type in _GENERATE_WORKFLOW_TYPES:
             return self._extract_last_user_message_content(user_content.content.messages).text
 
         raise ValueError("Unsupported workflow schema type for WebSocketUserMessage")

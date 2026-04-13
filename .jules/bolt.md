@@ -1,3 +1,6 @@
 ## 2024-10-24 - [Optimize JSON validation]
 **Learning:** When optimizing JSON validation, use a 'try-parse first' strategy instead of blanket string replacements (e.g., replacing single quotes with double quotes) before parsing. This prevents corrupting valid JSON that legitimately contains the replaced characters and avoids performance overhead on the happy path.
 **Action:** Always attempt to parse the original string first. Only fallback to quote replacement and a second parse attempt if the initial parse fails and single quotes are actually present in the string.
+## 2024-05-18 - Optimize Enum Membership Checks
+**Learning:** In Python 3.12, testing membership against Enum attributes explicitly inside inline lists (`val in [Enum.A, Enum.B]`) is not optimized into constant lookups. This incurs repeated list allocation and repeated attribute access overhead during execution.
+**Action:** When a membership check involves fixed Enum values on hot paths (like checking schema types during message routing), pre-allocate a module-level tuple of the Enum values (e.g., `_CHAT_SCHEMA_TYPES = (WorkflowSchemaType.CHAT, WorkflowSchemaType.CHAT_STREAM)`) and use that for the `in` check. This reduces overhead and speeds up the routine.
