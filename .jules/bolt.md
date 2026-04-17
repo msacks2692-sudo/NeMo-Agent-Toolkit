@@ -1,3 +1,6 @@
 ## 2024-10-24 - [Optimize JSON validation]
 **Learning:** When optimizing JSON validation, use a 'try-parse first' strategy instead of blanket string replacements (e.g., replacing single quotes with double quotes) before parsing. This prevents corrupting valid JSON that legitimately contains the replaced characters and avoids performance overhead on the happy path.
 **Action:** Always attempt to parse the original string first. Only fallback to quote replacement and a second parse attempt if the initial parse fails and single quotes are actually present in the string.
+## 2025-04-17 - Avoid O(N) allocation in regex midpoint matching
+**Learning:** In string manipulation where you need to find a regex match closest to a specific index (like a midpoint), wrapping `re.finditer()` in a `list()` forces an O(N) memory allocation and scans the entire string.
+**Action:** Instead of `min(list(re.finditer(...)))`, directly iterate over `re.finditer()`. Since `finditer` returns matches sequentially, the distance to a midpoint will monotonically decrease and then monotonically increase. You can `break` early as soon as the distance starts increasing, effectively turning a full-string scan into a half-string scan with O(1) memory overhead.
