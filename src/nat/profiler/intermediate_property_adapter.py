@@ -17,6 +17,10 @@ from nat.data_models.intermediate_step import IntermediateStep
 from nat.data_models.intermediate_step import IntermediateStepType
 from nat.data_models.intermediate_step import TokenUsageBaseModel
 
+# Pre-allocated tuples for enum membership checks to avoid list instantiation and repeated attribute lookups
+_LLM_EVENT_TYPES = (IntermediateStepType.LLM_START, IntermediateStepType.LLM_END)
+_TOOL_EVENT_TYPES = (IntermediateStepType.TOOL_START, IntermediateStepType.TOOL_END)
+
 
 class IntermediatePropertyAdaptor(IntermediateStep):
 
@@ -74,14 +78,14 @@ class IntermediatePropertyAdaptor(IntermediateStep):
     @property
     def llm_name(self) -> str:
         ret = ""
-        if self.payload.name and self.event_type in [IntermediateStepType.LLM_START, IntermediateStepType.LLM_END]:
+        if self.payload.name and self.event_type in _LLM_EVENT_TYPES:
             ret = self.payload.name
         return ret
 
     @property
     def tool_name(self) -> str:
         ret = ""
-        if self.payload.name and self.event_type in [IntermediateStepType.TOOL_START, IntermediateStepType.TOOL_END]:
+        if self.payload.name and self.event_type in _TOOL_EVENT_TYPES:
             ret = self.payload.name
         return ret
 

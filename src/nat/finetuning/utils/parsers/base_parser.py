@@ -24,6 +24,11 @@ from nat.finetuning.utils.parsers import adk_parser
 from nat.finetuning.utils.parsers import langchain_parser
 from nat.finetuning.utils.parsers import llama_index_parser
 
+# Pre-allocated tuples for enum membership checks to avoid list instantiation and repeated attribute lookups
+_VALID_PARSER_EVENT_TYPES = (
+    IntermediateStepType.LLM_END, IntermediateStepType.LLM_START, IntermediateStepType.TOOL_END)
+_VALID_PARSER_EVENT_STATES = (IntermediateStepState.START, IntermediateStepState.END)
+
 logger = logging.getLogger(__name__)
 
 
@@ -49,16 +54,14 @@ def parse_to_openai_messages(steps: list[IntermediateStep]) -> list[dict]:
     for message in steps:
         # Skip LLM_START events that come after TOOL_END events
         # These represent the assistant processing tool results internally
-        if message.event_type not in [
-                IntermediateStepType.LLM_END, IntermediateStepType.LLM_START, IntermediateStepType.TOOL_END
-        ]:
+        if message.event_type not in _VALID_PARSER_EVENT_TYPES:
             continue
 
         if (message.event_type == IntermediateStepType.LLM_START and last_event_type == IntermediateStepType.TOOL_END):
             continue
 
         # Skip streaming chunks
-        if message.event_state not in [IntermediateStepState.START, IntermediateStepState.END]:
+        if message.event_state not in _VALID_PARSER_EVENT_STATES:
             continue
 
         # Parse the message based on framework

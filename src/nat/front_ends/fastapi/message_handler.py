@@ -55,6 +55,10 @@ from nat.front_ends.fastapi.response_helpers import generate_streaming_response
 from nat.front_ends.fastapi.step_adaptor import StepAdaptor
 from nat.runtime.session import SessionManager
 
+# Pre-allocated tuples for enum membership checks to avoid list instantiation and repeated attribute lookups
+_CHAT_SCHEMA_TYPES = (WorkflowSchemaType.CHAT, WorkflowSchemaType.CHAT_STREAM)
+_GENERATE_SCHEMA_TYPES = (WorkflowSchemaType.GENERATE, WorkflowSchemaType.GENERATE_STREAM)
+
 logger = logging.getLogger(__name__)
 
 
@@ -158,10 +162,10 @@ class WebSocketMessageHandler:
         """
         Processes a WebSocketUserMessage based on schema type.
         """
-        if self._workflow_schema_type in [WorkflowSchemaType.CHAT, WorkflowSchemaType.CHAT_STREAM]:
+        if self._workflow_schema_type in _CHAT_SCHEMA_TYPES:
             return ChatRequest(**user_content.content.model_dump(include={"messages"}))
 
-        elif self._workflow_schema_type in [WorkflowSchemaType.GENERATE, WorkflowSchemaType.GENERATE_STREAM]:
+        elif self._workflow_schema_type in _GENERATE_SCHEMA_TYPES:
             return self._extract_last_user_message_content(user_content.content.messages).text
 
         raise ValueError("Unsupported workflow schema type for WebSocketUserMessage")
