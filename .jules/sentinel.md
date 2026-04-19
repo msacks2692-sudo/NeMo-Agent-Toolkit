@@ -1,0 +1,4 @@
+## 2024-05-28 - Path Traversal Vulnerability in `whl_name` Handling
+**Vulnerability:** Found a path traversal vulnerability in `src/nat/registry_handlers/rest/rest_handler.py`. The code takes `package.whl_name` directly from the REST API response and joins it to a temporary directory path using `os.path.join(tmp_dir, package.whl_name)`. Since `package.whl_name` is attacker-controlled (it comes from the remote API response when pulling packages), it could be set to a path like `../../../etc/passwd` or similar, potentially writing arbitrary files outside the intended `tmp_dir`.
+**Learning:** `os.path.join` does not sanitize against relative paths or absolute paths on its own. It trusts the input file names.
+**Prevention:** Always sanitize externally provided filenames using `os.path.basename()` before appending them to a directory path.
