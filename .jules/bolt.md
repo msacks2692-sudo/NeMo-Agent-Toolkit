@@ -1,3 +1,3 @@
-## 2024-10-24 - [Optimize JSON validation]
-**Learning:** When optimizing JSON validation, use a 'try-parse first' strategy instead of blanket string replacements (e.g., replacing single quotes with double quotes) before parsing. This prevents corrupting valid JSON that legitimately contains the replaced characters and avoids performance overhead on the happy path.
-**Action:** Always attempt to parse the original string first. Only fallback to quote replacement and a second parse attempt if the initial parse fails and single quotes are actually present in the string.
+## 2025-04-22 - Optimize Regex String Distance Calculation
+**Learning:** In string-processing algorithms that search for regex matches closest to a midpoint, using `list(re.finditer(...))` followed by `min()` forces an $O(N)$ memory allocation and full-string scan. Since regex engines yield matches monotonically from left to right, the calculated distance to the midpoint strictly decreases, reaches a local minimum, and then strictly increases.
+**Action:** Always short-circuit the regex iteration `break` as soon as the distance begins to increase to turn an $O(N)$ full-string sweep into an $O(N/2)$ lazy evaluation.
