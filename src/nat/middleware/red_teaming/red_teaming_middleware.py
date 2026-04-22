@@ -43,6 +43,9 @@ from nat.middleware.function_middleware import FunctionMiddlewareContext
 
 logger = logging.getLogger(__name__)
 
+# Pre-compiled regex for sentence boundaries to eliminate repeated compilation overhead
+_SENTENCE_PATTERN = re.compile(r"[.!?](?:\s+|$)")
+
 
 class RedTeamingMiddleware(FunctionMiddleware):
     """Middleware for red teaming that intercepts and modifies function inputs/outputs.
@@ -155,20 +158,27 @@ class RedTeamingMiddleware(FunctionMiddleware):
         Returns:
             The character index where the middle sentence ends
         """
-        # Find all sentence boundaries using regex
-        # Match sentence-ending punctuation followed by space/newline or end of string
-        sentence_pattern = r"[.!?](?:\s+|$)"
-        matches = list(re.finditer(sentence_pattern, text))
-
-        if not matches:
-            # No sentence boundaries found, insert at middle character
-            return len(text) // 2
-
-        # Find the sentence boundary closest to the middle
+        # Find all sentence boundaries using pre-compiled regex
+        # We iterate over finditer() to find the match closest to the midpoint.
+        # Since finditer returns matches from left to right, the distance to the
+        # midpoint will decrease, reach a minimum, and then increase. We short-circuit
+        # (break) once it starts increasing to avoid scanning the entire string.
         text_midpoint = len(text) // 2
-        closest_match = min(matches, key=lambda m: abs(m.end() - text_midpoint))
+        closest_match_end = -1
+        min_dist = float("inf")
 
-        return closest_match.end()
+        for match in _SENTENCE_PATTERN.finditer(text):
+            current_dist = abs(match.end() - text_midpoint)
+            if current_dist > min_dist:
+                break
+            min_dist = current_dist
+            closest_match_end = match.end()
+
+        if closest_match_end == -1:
+            # No sentence boundaries found, insert at middle character
+            return text_midpoint
+
+        return closest_match_end
 
     def _apply_payload_to_simple_type(self,
                                       original_value: list | str | int | float,
