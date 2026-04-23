@@ -43,6 +43,9 @@ from nat.middleware.function_middleware import FunctionMiddlewareContext
 
 logger = logging.getLogger(__name__)
 
+# Pre-compiled regex for sentence boundaries to avoid repeated compilation overhead
+_SENTENCE_PATTERN = re.compile(r"[.!?](?:\s+|$)")
+
 
 class RedTeamingMiddleware(FunctionMiddleware):
     """Middleware for red teaming that intercepts and modifies function inputs/outputs.
@@ -157,23 +160,30 @@ class RedTeamingMiddleware(FunctionMiddleware):
         """
         # Find all sentence boundaries using regex
         # Match sentence-ending punctuation followed by space/newline or end of string
-        sentence_pattern = r"[.!?](?:\s+|$)"
-        matches = list(re.finditer(sentence_pattern, text))
-
-        if not matches:
-            # No sentence boundaries found, insert at middle character
-            return len(text) // 2
-
-        # Find the sentence boundary closest to the middle
         text_midpoint = len(text) // 2
-        closest_match = min(matches, key=lambda m: abs(m.end() - text_midpoint))
+        closest_end = None
+        min_dist = float("inf")
 
-        return closest_match.end()
+        for match in _SENTENCE_PATTERN.finditer(text):
+            end = match.end()
+            dist = abs(end - text_midpoint)
 
-    def _apply_payload_to_simple_type(self,
-                                      original_value: list | str | int | float,
-                                      attack_payload: str,
-                                      payload_placement: str) -> Any:
+            if dist > min_dist:
+                # The distances will strictly increase once we pass the midpoint
+                break
+
+            min_dist = dist
+            closest_end = end
+
+        if closest_end is None:
+            # No sentence boundaries found, insert at middle character
+            return text_midpoint
+
+        return closest_end
+
+    def _apply_payload_to_simple_type(
+        self, original_value: list | str | int | float, attack_payload: str, payload_placement: str
+    ) -> Any:
         """Apply the attack payload to simple types (str, int, float) value.
 
         Args:
@@ -245,11 +255,14 @@ class RedTeamingMiddleware(FunctionMiddleware):
                 value_details = value.model_dump_json()
             else:
                 value_details = ""
-            additional_info = ("Additional info: A pydantic BaseModel with fields:" +
-                               value_details if value_details else "")
-            raise ValueError("Applying an attack payload to complex type, requires a target_field. \n"
-                             f"Input value: {value}.: {value_details}. {additional_info} \n"
-                             "A target field can be specified in the middleware configuration as a jsonpath.")
+            additional_info = (
+                "Additional info: A pydantic BaseModel with fields:" + value_details if value_details else ""
+            )
+            raise ValueError(
+                "Applying an attack payload to complex type, requires a target_field. \n"
+                f"Input value: {value}.: {value_details}. {additional_info} \n"
+                "A target field can be specified in the middleware configuration as a jsonpath."
+            )
 
         # Convert BaseModel to dict for jsonpath processing
         original_type = type(value)
@@ -282,9 +295,9 @@ class RedTeamingMiddleware(FunctionMiddleware):
 
     def _apply_payload_to_function_value(self, value: Any) -> Any:
         if self._call_limit is not None and self._call_count >= self._call_limit:
-            logger.warning("Call limit reached for red teaming middleware. "
-                           "Not applying attack payload to value: %s",
-                           value)
+            logger.warning(
+                "Call limit reached for red teaming middleware. Not applying attack payload to value: %s", value
+            )
             return value
         if isinstance(value, list | dict | BaseModel):
             modified_value = self._apply_payload_to_complex_type(value)
@@ -302,11 +315,9 @@ class RedTeamingMiddleware(FunctionMiddleware):
             logger.error("Failed to apply red team attack to function %s: %s", context.name, e, exc_info=True)
             raise
 
-    async def function_middleware_invoke(self,
-                                         *args: Any,
-                                         call_next: CallNext,
-                                         context: FunctionMiddlewareContext,
-                                         **kwargs: Any) -> Any:
+    async def function_middleware_invoke(
+        self, *args: Any, call_next: CallNext, context: FunctionMiddlewareContext, **kwargs: Any
+    ) -> Any:
         """Invoke middleware for single-output functions.
 
         Args:
@@ -337,8 +348,10 @@ class RedTeamingMiddleware(FunctionMiddleware):
             modified_output = self._apply_payload_to_function_value_with_exception(output, context)
             return modified_output
         else:
-            raise ValueError(f"Unknown target_location: {self._target_location}. "
-                             "Attack payloads can only be applied to function input or output.")
+            raise ValueError(
+                f"Unknown target_location: {self._target_location}. "
+                "Attack payloads can only be applied to function input or output."
+            )
 
 
 __all__ = ["RedTeamingMiddleware"]
