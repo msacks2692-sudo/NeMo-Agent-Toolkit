@@ -1,0 +1,4 @@
+## 2025-02-28 - Path Traversal in File Downloads
+**Vulnerability:** A path traversal vulnerability existed in `src/nat/registry_handlers/rest/rest_handler.py`. The code used `os.path.join(tmp_dir, package.whl_name)` to construct the destination file path for downloading and saving remote packages.
+**Learning:** This existed because the `package.whl_name` was directly trusted from an external REST API response. `os.path.join()` is dangerous when the second argument can be controlled by an attacker; if the argument is an absolute path or contains path traversal sequences like `../../`, `os.path.join()` will yield a path outside the intended temporary directory.
+**Prevention:** To avoid this next time, always sanitize user-provided or externally-provided filenames. Specifically, use `os.path.basename()` before joining them with a target directory path (e.g., `os.path.join(tmp_dir, os.path.basename(package.whl_name))`).
