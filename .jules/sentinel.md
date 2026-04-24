@@ -1,0 +1,4 @@
+## 2025-04-24 - Fix Path Traversal in Wheel Download
+**Vulnerability:** A Path Traversal vulnerability existed in `RestRegistryHandler.pull` where the downloaded package's wheel name was blindly joined with the temporary directory path (`whl_path = os.path.join(tmp_dir, package.whl_name)`). If a malicious remote registry or man-in-the-middle injected a wheel name containing directory traversal characters (e.g. `../../../etc/passwd`), it would allow arbitrary file writes.
+**Learning:** The lack of input sanitization when trusting remote payloads led to a security blindspot where `os.path.join` became an enabler for traversal attacks.
+**Prevention:** Always sanitize remote or user-provided file names using `os.path.basename()` before combining them with target destination directories, ensuring the file remains strictly within the intended temporary or download folder.
