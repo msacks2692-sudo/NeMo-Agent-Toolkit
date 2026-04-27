@@ -43,6 +43,9 @@ from nat.middleware.function_middleware import FunctionMiddlewareContext
 
 logger = logging.getLogger(__name__)
 
+# Match sentence-ending punctuation followed by space/newline or end of string
+_SENTENCE_PATTERN = re.compile(r"[.!?](?:\s+|$)")
+
 
 class RedTeamingMiddleware(FunctionMiddleware):
     """Middleware for red teaming that intercepts and modifies function inputs/outputs.
@@ -155,20 +158,26 @@ class RedTeamingMiddleware(FunctionMiddleware):
         Returns:
             The character index where the middle sentence ends
         """
-        # Find all sentence boundaries using regex
-        # Match sentence-ending punctuation followed by space/newline or end of string
-        sentence_pattern = r"[.!?](?:\s+|$)"
-        matches = list(re.finditer(sentence_pattern, text))
-
-        if not matches:
-            # No sentence boundaries found, insert at middle character
-            return len(text) // 2
-
-        # Find the sentence boundary closest to the middle
         text_midpoint = len(text) // 2
-        closest_match = min(matches, key=lambda m: abs(m.end() - text_midpoint))
+        best_distance = float("inf")
+        best_end = -1
 
-        return closest_match.end()
+        # We lazily iterate over sentence boundaries. Since matches are ordered by position,
+        # the distance to the midpoint strictly decreases, and then strictly increases.
+        # We short-circuit as soon as the distance starts increasing to avoid O(N) memory
+        # allocations and full string scans for large strings.
+        for match in _SENTENCE_PATTERN.finditer(text):
+            current_distance = abs(match.end() - text_midpoint)
+            if current_distance > best_distance:
+                break
+            best_distance = current_distance
+            best_end = match.end()
+
+        if best_end == -1:
+            # No sentence boundaries found, insert at middle character
+            return text_midpoint
+
+        return best_end
 
     def _apply_payload_to_simple_type(self,
                                       original_value: list | str | int | float,
