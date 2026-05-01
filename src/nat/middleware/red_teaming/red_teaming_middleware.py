@@ -43,6 +43,9 @@ from nat.middleware.function_middleware import FunctionMiddlewareContext
 
 logger = logging.getLogger(__name__)
 
+# Pre-compile regex for finding sentence boundaries to avoid repeated compilation overhead
+_SENTENCE_PATTERN = re.compile(r"[.!?](?:\s+|$)")
+
 
 class RedTeamingMiddleware(FunctionMiddleware):
     """Middleware for red teaming that intercepts and modifies function inputs/outputs.
@@ -155,20 +158,27 @@ class RedTeamingMiddleware(FunctionMiddleware):
         Returns:
             The character index where the middle sentence ends
         """
-        # Find all sentence boundaries using regex
-        # Match sentence-ending punctuation followed by space/newline or end of string
-        sentence_pattern = r"[.!?](?:\s+|$)"
-        matches = list(re.finditer(sentence_pattern, text))
-
-        if not matches:
-            # No sentence boundaries found, insert at middle character
-            return len(text) // 2
-
+        # Find all sentence boundaries using pre-compiled regex
         # Find the sentence boundary closest to the middle
         text_midpoint = len(text) // 2
-        closest_match = min(matches, key=lambda m: abs(m.end() - text_midpoint))
+        best_match = None
+        min_dist = float("inf")
 
-        return closest_match.end()
+        # Iterate over matches and short-circuit when distance starts increasing
+        for match in _SENTENCE_PATTERN.finditer(text):
+            dist = abs(match.end() - text_midpoint)
+            if dist < min_dist:
+                min_dist = dist
+                best_match = match
+            else:
+                # Distance is increasing, we've passed the closest point
+                break
+
+        if best_match is None:
+            # No sentence boundaries found, insert at middle character
+            return text_midpoint
+
+        return best_match.end()
 
     def _apply_payload_to_simple_type(self,
                                       original_value: list | str | int | float,
