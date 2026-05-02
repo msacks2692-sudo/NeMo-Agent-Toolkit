@@ -129,7 +129,8 @@ class RestRegistryHandler(AbstractRegistryHandler):
 
             for package in validated_pull_response.packages:
                 whl_bytes = base64.b64decode(package.whl)
-                whl_path = os.path.join(tmp_dir, package.whl_name)
+                # Sanitize filename to prevent path traversal
+                whl_path = os.path.join(tmp_dir, os.path.basename(package.whl_name))
 
                 with open(whl_path, "wb") as f:
                     f.write(whl_bytes)
