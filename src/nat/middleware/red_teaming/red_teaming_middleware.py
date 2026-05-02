@@ -38,8 +38,11 @@ from jsonpath_ng import parse
 from pydantic import BaseModel
 
 from nat.middleware.function_middleware import CallNext
+
 from nat.middleware.function_middleware import FunctionMiddleware
 from nat.middleware.function_middleware import FunctionMiddlewareContext
+
+_SENTENCE_PATTERN = re.compile(r"[.!?](?:\s+|$)")
 
 logger = logging.getLogger(__name__)
 
@@ -155,20 +158,25 @@ class RedTeamingMiddleware(FunctionMiddleware):
         Returns:
             The character index where the middle sentence ends
         """
-        # Find all sentence boundaries using regex
-        # Match sentence-ending punctuation followed by space/newline or end of string
-        sentence_pattern = r"[.!?](?:\s+|$)"
-        matches = list(re.finditer(sentence_pattern, text))
-
-        if not matches:
-            # No sentence boundaries found, insert at middle character
-            return len(text) // 2
-
-        # Find the sentence boundary closest to the middle
         text_midpoint = len(text) // 2
-        closest_match = min(matches, key=lambda m: abs(m.end() - text_midpoint))
+        best_dist = float('inf')
+        best_end = -1
 
-        return closest_match.end()
+        # Iterate over sentence boundaries (punctuation followed by space/newline or EOF)
+        # We short-circuit when distance from midpoint starts to increase
+        for m in _SENTENCE_PATTERN.finditer(text):
+            end = m.end()
+            dist = abs(end - text_midpoint)
+            if dist > best_dist:
+                break
+            best_dist = dist
+            best_end = end
+
+        if best_end == -1:
+            # No sentence boundaries found, insert at middle character
+            return text_midpoint
+
+        return best_end
 
     def _apply_payload_to_simple_type(self,
                                       original_value: list | str | int | float,
