@@ -1,0 +1,4 @@
+## 2025-05-05 - Fix Path Traversal in File Download
+**Vulnerability:** A path traversal vulnerability was present in `src/nat/registry_handlers/rest/rest_handler.py`. The system directly joined `tmp_dir` with a user/network-provided string (`package.whl_name`) when deciding where to save downloaded wheel files, allowing a malicious server to specify a name like `../../../../etc/passwd` to overwrite arbitrary local files.
+**Learning:** Network-provided filenames cannot be trusted implicitly even if the system expects controlled artifacts. Using `os.path.join` with unsanitized inputs allows dangerous paths.
+**Prevention:** Always sanitize network or user-provided filenames before using them to write files locally. Using `os.path.basename()` is an effective, simple way to discard any directory traversal segments.
