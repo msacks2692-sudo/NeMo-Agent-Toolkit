@@ -1,0 +1,4 @@
+## 2024-05-08 - Fixed Zip-Slip Path Traversal in REST Registry Handler
+**Vulnerability:** A path traversal (Zip-Slip style) vulnerability existed in `src/nat/registry_handlers/rest/rest_handler.py`.
+**Learning:** When unpacking or saving files retrieved from a remote registry or uploaded by a user, directly joining a target directory with the externally provided file name (e.g., `os.path.join(tmp_dir, package.whl_name)`) allows a malicious server/user to supply a name like `../../../etc/passwd`, causing the application to write outside the intended directory.
+**Prevention:** Always sanitize externally provided file names before using them in path joins. Using `os.path.basename()` effectively strips any directory traversal sequences (e.g., `../`), ensuring the file is safely written only into the intended directory.
