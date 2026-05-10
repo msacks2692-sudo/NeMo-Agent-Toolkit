@@ -1,0 +1,4 @@
+## 2025-05-10 - Path Traversal Vulnerability
+**Vulnerability:** Found a Path Traversal vulnerability in `src/nat/registry_handlers/rest/rest_handler.py` where a malicious `package.whl_name` provided via an external REST registry response could bypass the intended output directory during artifact pull, allowing a malicious actor to write files outside the target temporary directory (`./.tmp/nat-pull/`).
+**Learning:** This occurred because `package.whl_name` from an untrusted source was passed directly into `os.path.join()` without sanitization. `os.path.join()` handles absolute paths or paths with `../` inherently dangerously when combined with untrusted inputs.
+**Prevention:** To avoid this in the future, always sanitize user-provided or external file names by passing them through `os.path.basename()` before passing them into `os.path.join()`.
