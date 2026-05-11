@@ -1,0 +1,4 @@
+## 2025-02-14 - Fix Path Traversal in Package Download
+**Vulnerability:** A path traversal vulnerability existed in `src/nat/registry_handlers/rest/rest_handler.py` where a user-provided wheel filename (`package.whl_name`) was directly concatenated with a temporary directory path using `os.path.join(tmp_dir, package.whl_name)`. An attacker could exploit this by providing a malicious filename (e.g., `../../etc/passwd`) to write files outside the intended temporary directory.
+**Learning:** This occurred because `os.path.join` does not sanitize path components. If a component is an absolute path or contains directory traversal characters (`..`), it can override the base path or navigate out of it.
+**Prevention:** To avoid this, always sanitize user-provided or external file names by extracting only the base name (e.g., using `os.path.basename()`) before joining them with a target directory path.
