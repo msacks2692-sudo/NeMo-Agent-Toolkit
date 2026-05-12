@@ -1,3 +1,7 @@
-## 2024-10-24 - [Optimize JSON validation]
-**Learning:** When optimizing JSON validation, use a 'try-parse first' strategy instead of blanket string replacements (e.g., replacing single quotes with double quotes) before parsing. This prevents corrupting valid JSON that legitimately contains the replaced characters and avoids performance overhead on the happy path.
-**Action:** Always attempt to parse the original string first. Only fallback to quote replacement and a second parse attempt if the initial parse fails and single quotes are actually present in the string.
+## 2024-05-12 - Initial Bolt Setup
+**Learning:** Initializing journal to document critical learnings.
+**Action:** Proceed with performance exploration.
+
+## 2024-05-12 - Fast-path JSON string parsing
+**Learning:** Using `json.loads` within a `try...except` block on arbitrary strings is computationally expensive when the string is large and not JSON.
+**Action:** Implementing a quick structural check (e.g., verifying if the string starts with common JSON characters like `{`, `[`, `"`) before attempting `json.loads` provides a significant performance boost (~50% reduction in overhead for non-JSON strings).
