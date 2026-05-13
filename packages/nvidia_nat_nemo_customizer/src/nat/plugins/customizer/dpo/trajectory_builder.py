@@ -383,6 +383,7 @@ class DPOTrajectoryBuilder(TrajectoryBuilder):
         # Create mapping of example ID to input item
         input_items_map: dict[str, EvalInputItem] = {item.id: item for item in eval_result.eval_input.eval_input_items}
 
+        total_candidates = 0
         for example_id, input_item in input_items_map.items():
             # Filter for TTC_END steps with matching name
             for step in input_item.trajectory:
@@ -394,13 +395,15 @@ class DPOTrajectoryBuilder(TrajectoryBuilder):
                 if candidate is None:
                     continue
 
-                self._metrics["total_candidates"] = (self._metrics.get("total_candidates", 0) + 1)
+                total_candidates += 1
 
                 # Group by (example_id, turn_id)
                 turn_key = f"{example_id}::{candidate.turn_id}"
                 if turn_key not in candidates_by_turn:
                     candidates_by_turn[turn_key] = []
                 candidates_by_turn[turn_key].append(candidate)
+
+        self._metrics["total_candidates"] = self._metrics.get("total_candidates", 0) + total_candidates
 
         logger.debug(
             "Collected %d candidates across %d turns",
@@ -577,12 +580,14 @@ class DPOTrajectoryBuilder(TrajectoryBuilder):
             List of preference pairs.
         """
         all_pairs: list[PreferencePair] = []
+        skipped_single_candidate = 0
+        skipped_score_diff = 0
 
         for turn_key, candidates in candidates_by_turn.items():
             # Check if we have enough candidates
             if len(candidates) < 2:
                 if self.config.require_multiple_candidates:
-                    self._metrics["skipped_single_candidate"] = (self._metrics.get("skipped_single_candidate", 0) + 1)
+                    skipped_single_candidate += 1
                     logger.debug("Skipping turn %s with single candidate", turn_key)
                     continue
 
@@ -590,16 +595,20 @@ class DPOTrajectoryBuilder(TrajectoryBuilder):
             sorted_candidates = sorted(candidates, key=lambda c: c.score, reverse=True)
 
             if self.config.exhaustive_pairs:
-                pairs = self._generate_exhaustive_pairs(sorted_candidates)
+                pairs, skipped_diffs = self._generate_exhaustive_pairs(sorted_candidates)
             else:
-                pairs = self._generate_best_vs_worst_pair(sorted_candidates)
+                pairs, skipped_diffs = self._generate_best_vs_worst_pair(sorted_candidates)
 
+            skipped_score_diff += skipped_diffs
             all_pairs.extend(pairs)
+
+        self._metrics["skipped_single_candidate"] = self._metrics.get("skipped_single_candidate", 0) + skipped_single_candidate
+        self._metrics["skipped_score_diff"] = self._metrics.get("skipped_score_diff", 0) + skipped_score_diff
 
         logger.debug("Generated %d preference pairs", len(all_pairs))
         return all_pairs
 
-    def _generate_exhaustive_pairs(self, sorted_candidates: list[CandidateStep]) -> list[PreferencePair]:
+    def _generate_exhaustive_pairs(self, sorted_candidates: list[CandidateStep]) -> tuple[list[PreferencePair], int]:
         """
         Generate all pairwise comparisons where score(chosen) > score(rejected).
 
@@ -607,9 +616,10 @@ class DPOTrajectoryBuilder(TrajectoryBuilder):
             sorted_candidates: Candidates sorted by score (descending).
 
         Returns:
-            List of preference pairs, sorted by score difference (descending).
+            Tuple of (List of preference pairs sorted by score difference descending, count of skipped pairs due to score diff).
         """
         pairs: list[PreferencePair] = []
+        skipped_score_diff = 0
 
         for i, chosen in enumerate(sorted_candidates):
             for rejected in sorted_candidates[i + 1:]:
@@ -617,7 +627,7 @@ class DPOTrajectoryBuilder(TrajectoryBuilder):
 
                 # Apply minimum score difference filter
                 if score_diff < self.config.min_score_diff:
-                    self._metrics["skipped_score_diff"] = (self._metrics.get("skipped_score_diff", 0) + 1)
+                    skipped_score_diff += 1
                     continue
 
                 pairs.append(
@@ -644,9 +654,9 @@ class DPOTrajectoryBuilder(TrajectoryBuilder):
         if self.config.max_pairs_per_turn is not None:
             pairs = pairs[:self.config.max_pairs_per_turn]
 
-        return pairs
+        return pairs, skipped_score_diff
 
-    def _generate_best_vs_worst_pair(self, sorted_candidates: list[CandidateStep]) -> list[PreferencePair]:
+    def _generate_best_vs_worst_pair(self, sorted_candidates: list[CandidateStep]) -> tuple[list[PreferencePair], int]:
         """
         Generate a single pair: best candidate vs worst candidate.
 
@@ -654,10 +664,10 @@ class DPOTrajectoryBuilder(TrajectoryBuilder):
             sorted_candidates: Candidates sorted by score (descending).
 
         Returns:
-            List with at most one preference pair.
+            Tuple of (List with at most one preference pair, count of skipped pairs due to score diff).
         """
         if len(sorted_candidates) < 2:
-            return []
+            return [], 0
 
         chosen = sorted_candidates[0]  # Best
         rejected = sorted_candidates[-1]  # Worst
@@ -666,8 +676,7 @@ class DPOTrajectoryBuilder(TrajectoryBuilder):
 
         # Apply minimum score difference filter
         if score_diff < self.config.min_score_diff:
-            self._metrics["skipped_score_diff"] = (self._metrics.get("skipped_score_diff", 0) + 1)
-            return []
+            return [], 1
 
         return [
             PreferencePair(
@@ -685,7 +694,7 @@ class DPOTrajectoryBuilder(TrajectoryBuilder):
                     "num_candidates": len(sorted_candidates),
                 },
             )
-        ]
+        ], 0
 
     def _build_trajectories(self, pairs: list[PreferencePair]) -> list[Trajectory]:
         """
