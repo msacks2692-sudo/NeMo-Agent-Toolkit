@@ -1,0 +1,4 @@
+## 2025-02-12 - Path Traversal in Package Download
+**Vulnerability:** A path traversal vulnerability existed in `src/nat/registry_handlers/rest/rest_handler.py`. The `package.whl_name` was directly concatenated with a temporary directory path using `os.path.join()`, allowing malicious wheel names (e.g. `../../evil.whl`) to write files outside the intended sandbox.
+**Learning:** Even when working with seemingly structured metadata like a wheel package name retrieved from a remote registry, standard libraries like `os.path.join` do not intrinsically sanitize `../` relative path segments, trusting the input implicitly.
+**Prevention:** To prevent path traversal vulnerabilities when saving uploaded or remote files, always sanitize user-provided file names using `os.path.basename()` before joining them with a target directory path.
