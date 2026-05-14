@@ -54,6 +54,8 @@ if typing.TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_SMART_MODELS_REGEX = re.compile(r"gpt-?5", re.IGNORECASE)
+
 
 class ReActGraphState(BaseModel):
     """State schema for the ReAct Agent Graph"""
@@ -122,8 +124,7 @@ class ReActAgentGraph(DualNodeAgent):
             Runnable[LanguageModelInput, BaseMessage]: The LLM with any additional parameters bound.
         """
         # models that don't need (or don't support)a stop sequence
-        smart_models = re.compile(r"gpt-?5", re.IGNORECASE)
-        if smart_models.search(str(getattr(self.llm, "model", ""))):
+        if _SMART_MODELS_REGEX.search(str(getattr(self.llm, "model", ""))):
             # no need to bind any additional parameters to the LLM
             return self.llm
         # add a stop sequence to the LLM
