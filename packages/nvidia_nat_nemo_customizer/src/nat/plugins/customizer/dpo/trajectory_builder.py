@@ -380,10 +380,10 @@ class DPOTrajectoryBuilder(TrajectoryBuilder):
         """
         candidates_by_turn: dict[str, list[CandidateStep]] = {}
 
-        # Create mapping of example ID to input item
-        input_items_map: dict[str, EvalInputItem] = {item.id: item for item in eval_result.eval_input.eval_input_items}
+        total_candidates = self._metrics.get("total_candidates", 0)
 
-        for example_id, input_item in input_items_map.items():
+        for input_item in eval_result.eval_input.eval_input_items:
+            example_id = input_item.id
             # Filter for TTC_END steps with matching name
             for step in input_item.trajectory:
                 if not self._is_target_step(step):
@@ -394,17 +394,20 @@ class DPOTrajectoryBuilder(TrajectoryBuilder):
                 if candidate is None:
                     continue
 
-                self._metrics["total_candidates"] = (self._metrics.get("total_candidates", 0) + 1)
+                total_candidates += 1
 
                 # Group by (example_id, turn_id)
                 turn_key = f"{example_id}::{candidate.turn_id}"
-                if turn_key not in candidates_by_turn:
-                    candidates_by_turn[turn_key] = []
-                candidates_by_turn[turn_key].append(candidate)
+                try:
+                    candidates_by_turn[turn_key].append(candidate)
+                except KeyError:
+                    candidates_by_turn[turn_key] = [candidate]
+
+        self._metrics["total_candidates"] = total_candidates
 
         logger.debug(
             "Collected %d candidates across %d turns",
-            self._metrics.get("total_candidates", 0),
+            total_candidates,
             len(candidates_by_turn),
         )
 
