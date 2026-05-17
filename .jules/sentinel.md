@@ -1,0 +1,4 @@
+## 2024-05-17 - Path Traversal and Argument Injection in File Handling
+**Vulnerability:** User-provided file names from remote registries were saved using `os.path.join` without sanitization, and these file paths were directly appended to `uv pip install` commands.
+**Learning:** `os.path.join` resolves to arbitrary locations if the second parameter contains directory traversals (`../`) or is an absolute path. Passing paths to CLI tools without `--` allows arguments starting with a hyphen to be interpreted as command flags instead of positional file paths.
+**Prevention:** Always sanitize remote or untrusted file names using `os.path.basename()` before combining them with directories. Always use `--` in `subprocess` commands right before passing dynamic file paths to prevent argument injection.
