@@ -49,6 +49,8 @@ from nat.agent.react_agent.output_parser import ReActOutputParserException
 from nat.agent.react_agent.prompt import SYSTEM_PROMPT
 from nat.agent.react_agent.prompt import USER_PROMPT
 
+_SMART_MODELS_REGEX = re.compile(r"gpt-?5", re.IGNORECASE)
+
 if typing.TYPE_CHECKING:
     from nat.agent.react_agent.register import ReActAgentWorkflowConfig
 
@@ -122,8 +124,7 @@ class ReActAgentGraph(DualNodeAgent):
             Runnable[LanguageModelInput, BaseMessage]: The LLM with any additional parameters bound.
         """
         # models that don't need (or don't support)a stop sequence
-        smart_models = re.compile(r"gpt-?5", re.IGNORECASE)
-        if smart_models.search(str(getattr(self.llm, "model", ""))):
+        if _SMART_MODELS_REGEX.search(str(getattr(self.llm, "model", ""))):
             # no need to bind any additional parameters to the LLM
             return self.llm
         # add a stop sequence to the LLM
