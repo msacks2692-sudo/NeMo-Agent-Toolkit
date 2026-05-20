@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
 from datetime import datetime
 from typing import Literal
 
@@ -29,6 +30,10 @@ from nat.cli.register_workflow import register_function
 from nat.cli.register_workflow import register_function_group
 from nat.data_models.function import FunctionBaseConfig
 from nat.data_models.function import FunctionGroupBaseConfig
+
+_GITHUB_URL_PATTERN = re.compile(
+    r"https://github\.com/(?P<repo_path>[^/]*/[^/]*)/blob/(?P<file_path>[^?#]*)(?:#L(?P<start>\d+)(?:-L(?P<end>\d+))?)?"
+)
 
 
 class GithubCreateIssueModel(BaseModel):
@@ -377,8 +382,6 @@ class GithubFilesGroupConfig(FunctionBaseConfig, name="github_files_tool"):
 @register_function(config_type=GithubFilesGroupConfig)
 async def github_files_tool(config: GithubFilesGroupConfig, _builder: Builder):
 
-    import re
-
     import httpx
 
     class FileMetadata(BaseModel):
@@ -411,8 +414,7 @@ async def github_files_tool(config: GithubFilesGroupConfig, _builder: Builder):
             - https://github.com/org/repo/blob/main/README.md#L409-L417 -> Returns lines 409-417 of the README.md file
             """
 
-            pattern = r"https://github\.com/(?P<repo_path>[^/]*/[^/]*)/blob/(?P<file_path>[^?#]*)(?:#L(?P<start>\d+)(?:-L(?P<end>\d+))?)?"
-            match = re.match(pattern, url_text)
+            match = _GITHUB_URL_PATTERN.match(url_text)
             if not match:
                 return ("Invalid github url. Please provide a valid github url. "
                         "Example: 'https://github.com/org/repo/blob/main/README.md' "
