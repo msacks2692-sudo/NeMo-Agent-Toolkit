@@ -1,0 +1,4 @@
+## 2025-05-22 - Path Traversal Vulnerability in Package Wheel Download
+**Vulnerability:** A path traversal vulnerability was present in the REST registry handler where user-provided `whl_name` was directly joined with the temporary directory path (`os.path.join(tmp_dir, package.whl_name)`). This allowed an attacker to overwrite arbitrary files on the filesystem by providing a wheel name containing directory traversal sequences (e.g., `../../../etc/passwd`).
+**Learning:** The vulnerability existed because input validation and sanitization were missing for the `whl_name` attribute. Although the package is retrieved from a registry, the response data from an external source should be considered untrusted and validated.
+**Prevention:** To prevent this vulnerability, always sanitize user-provided file names before using them in file system operations. Using `os.path.basename()` extracts only the final component of the path, eliminating any directory traversal sequences.
