@@ -38,6 +38,8 @@ from nat.middleware.function_middleware import FunctionMiddlewareChain
 from nat.middleware.middleware import FunctionMiddlewareContext
 from nat.middleware.middleware import Middleware
 
+_VALID_NAME_REGEX = re.compile(r"^[a-zA-Z0-9_.-]+$")
+
 _InvokeFnT = Callable[[InputT], Awaitable[SingleOutputT]]
 _StreamFnT = Callable[[InputT], AsyncGenerator[StreamingOutputT]]
 
@@ -486,7 +488,7 @@ class FunctionGroup:
         """
         if not name.strip():
             raise ValueError("Function name cannot be empty or blank")
-        if not re.match(r"^[a-zA-Z0-9_.-]+$", name):
+        if not _VALID_NAME_REGEX.match(name):
             raise ValueError(
                 f"Function name can only contain letters, numbers, underscores, periods, and hyphens: {name}")
         if name in self._functions:
