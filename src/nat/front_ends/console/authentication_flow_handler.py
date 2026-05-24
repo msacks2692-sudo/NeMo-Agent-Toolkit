@@ -151,7 +151,7 @@ class ConsoleAuthenticationFlowHandler(FlowHandlerBase):
         encoded_credentials = base64.b64encode(credentials.encode("utf-8")).decode("ascii")
 
         return AuthenticatedContext(
-            headers={"Authorization": f"Bearer {encoded_credentials}"},
+            headers={"Authorization": f"Basic {encoded_credentials}"},
             metadata={
                 "username": username, "password": password
             },
