@@ -78,7 +78,8 @@ async def network_connectivity_check_tool(config: NetworkConnectivityCheckToolCo
                 # and infrastructure setup.
 
                 # Example ping command to test basic connectivity
-                result = subprocess.run(["ping", "-c", "3", host_id], capture_output=True, text=True, check=False)
+                # Use '--' to prevent argument injection in case host_id starts with a hyphen
+                result = subprocess.run(["ping", "-c", "3", "--", host_id], capture_output=True, text=True, check=False)
 
                 if result.returncode == 0:
                     ping_data = result.stdout
