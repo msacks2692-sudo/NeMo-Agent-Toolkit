@@ -35,6 +35,15 @@ from nat.middleware.function_middleware import CallNext
 from nat.middleware.function_middleware import CallNextStream
 from nat.middleware.middleware import FunctionMiddlewareContext
 
+CATEGORY_PATTERN_1 = re.compile(r'Categories?:\s*([^\n]+)', re.IGNORECASE)
+CATEGORY_PATTERN_2 = re.compile(r'Categories?\s*=\s*([^\n]+)', re.IGNORECASE)
+CATEGORY_PATTERN_3 = re.compile(r'"Safety Categories":\s*"([^"]+)"', re.IGNORECASE)
+CATEGORY_PATTERNS = [CATEGORY_PATTERN_1, CATEGORY_PATTERN_2, CATEGORY_PATTERN_3]
+
+CLEANUP_PATTERN = re.compile(r'[*_]+')
+UNSAFE_PATTERN = re.compile(r'\bunsafe\b')
+SAFE_PATTERN = re.compile(r'\bsafe\b')
+
 logger = logging.getLogger(__name__)
 
 
@@ -129,14 +138,8 @@ class ContentSafetyGuardMiddleware(DefenseMiddleware):
             except (json.JSONDecodeError, ValueError, AttributeError):
                 # Not JSON, try text parsing (for Qwen Guard)
                 # Look for "Categories:" or "Category:" followed by text
-                category_patterns = [
-                    r'Categories?:\s*([^\n]+)',  # Categories: Violent
-                    r'Categories?\s*=\s*([^\n]+)',  # Categories = Violent
-                    r'"Safety Categories":\s*"([^"]+)"',  # JSON-like in text
-                ]
-
-                for pattern in category_patterns:
-                    match = re.search(pattern, response_text, re.IGNORECASE)
+                for pattern in CATEGORY_PATTERNS:
+                    match = pattern.search(response_text)
                     if match:
                         category_text = match.group(1).strip()
                         # Split by comma if comma-separated
@@ -164,14 +167,14 @@ class ContentSafetyGuardMiddleware(DefenseMiddleware):
         Returns:
             GuardResponseResult with is_safe boolean, categories list, and raw response.
         """
-        cleaned_text = re.sub(r'[*_]+', '', response_text).strip()
+        cleaned_text = CLEANUP_PATTERN.sub('', response_text).strip()
         response_lower = cleaned_text.lower()
 
         # Search for "Unsafe" or "Safe" anywhere in the response (case-insensitive)
         # Prioritize "Unsafe" if both are present
-        if re.search(r'\bunsafe\b', response_lower):
+        if UNSAFE_PATTERN.search(response_lower):
             is_safe = False
-        elif re.search(r'\bsafe\b', response_lower):
+        elif SAFE_PATTERN.search(response_lower):
             is_safe = True
         else:
             # Detect implicit refusals (model refuses = harmful content detected)
