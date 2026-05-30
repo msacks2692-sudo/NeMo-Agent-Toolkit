@@ -22,6 +22,11 @@ from langchain_core.exceptions import LangChainException
 
 from .prompt import SYSTEM_PROMPT
 
+ACTION_REGEX = re.compile(
+    r"Action\s*\d*\s*:[\s]*(.*?)\s*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*?)(?=\s*[\n|\s]\s*Observation\b|$)", re.DOTALL)
+ACTION_MISSING_REGEX = re.compile(r"Action\s*\d*\s*:[\s]*(.*?)", re.DOTALL)
+ACTION_INPUT_MISSING_REGEX = re.compile(r"[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)", re.DOTALL)
+
 FINAL_ANSWER_ACTION = "Final Answer:"
 MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE = "Invalid Format: Missing 'Action:' after 'Thought:'"
 MISSING_ACTION_INPUT_AFTER_ACTION_ERROR_MESSAGE = "Invalid Format: Missing 'Action Input:' after 'Action:'"
@@ -74,8 +79,7 @@ class ReActOutputParser(AgentOutputParser):
 
     def parse(self, text: str) -> AgentAction | AgentFinish:
         includes_answer = FINAL_ANSWER_ACTION in text
-        regex = r"Action\s*\d*\s*:[\s]*(.*?)\s*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*?)(?=\s*[\n|\s]\s*Observation\b|$)"
-        action_match = re.search(regex, text, re.DOTALL)
+        action_match = ACTION_REGEX.search(text)
         if action_match:
             if includes_answer:
                 raise ReActOutputParserException(
@@ -91,10 +95,10 @@ class ReActOutputParser(AgentOutputParser):
         if includes_answer:
             return AgentFinish({"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text)
 
-        if not re.search(r"Action\s*\d*\s*:[\s]*(.*?)", text, re.DOTALL):
+        if not ACTION_MISSING_REGEX.search(text):
             raise ReActOutputParserException(observation=MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE,
                                              missing_action=True)
-        if not re.search(r"[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)", text, re.DOTALL):
+        if not ACTION_INPUT_MISSING_REGEX.search(text):
             raise ReActOutputParserException(observation=MISSING_ACTION_INPUT_AFTER_ACTION_ERROR_MESSAGE,
                                              missing_action_input=True)
         raise ReActOutputParserException(f"Could not parse LLM output: `{text}`")
