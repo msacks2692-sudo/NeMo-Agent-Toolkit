@@ -95,7 +95,7 @@ class PypiRegistryHandler(AbstractRegistryHandler):
     def _upload_to_pypi(self, wheel_path: str) -> None:
 
         return subprocess.run(
-            ["twine", "upload", "--repository-url", f"{self._endpoint}/{self._publish_route}", f"{wheel_path}"],
+            ["twine", "upload", "--repository-url", f"{self._endpoint}/{self._publish_route}", "--", f"{wheel_path}"],
             check=True)
 
     @asynccontextmanager
@@ -132,6 +132,7 @@ class PypiRegistryHandler(AbstractRegistryHandler):
                 "--prerelease=allow",
                 "--index-url",
                 f"{self._endpoint}/{self._pull_route}/",
+                "--",
                 versioned_packages_str
             ],
                                     check=True)
@@ -169,7 +170,7 @@ class PypiRegistryHandler(AbstractRegistryHandler):
         """
 
         try:
-            completed_process = subprocess.run(["pip", "search", "--index", f"{self._endpoint}", query.query],
+            completed_process = subprocess.run(["pip", "search", "--index", f"{self._endpoint}", "--", query.query],
                                                text=True,
                                                capture_output=True,
                                                check=True)
