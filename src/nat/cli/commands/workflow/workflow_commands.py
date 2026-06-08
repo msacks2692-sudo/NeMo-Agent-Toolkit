@@ -373,9 +373,9 @@ def delete_command(workflow_name: str, yes_flag: bool):
         package_name = _get_module_name(workflow_name)
 
         if editable:
-            uninstall_cmd = ['uv', 'pip', 'uninstall', package_name]
+            uninstall_cmd = ['uv', 'pip', 'uninstall', '--', package_name]
         else:
-            uninstall_cmd = ['pip', 'uninstall', '-y', package_name]
+            uninstall_cmd = ['pip', 'uninstall', '-y', '--', package_name]
 
         # Uninstall the package
         click.echo(f"Uninstalling workflow '{workflow_name}' package...")
