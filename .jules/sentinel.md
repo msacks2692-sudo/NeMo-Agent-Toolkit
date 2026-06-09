@@ -1,0 +1,5 @@
+## 2025-06-09 - [HIGH] Argument Injection in subprocess.run
+
+**Vulnerability:** Argument Injection vulnerability in `pypi_handler.py` and `local_handler.py`. Dynamic user inputs (e.g., `query.query` and `package_name.name`) were passed directly into `subprocess.run` argument lists (`["pip", "search", "--index", url, query.query]`) without a `--` delimiter. If the input string begins with a `-` (e.g., `-h`), the executed program parses it as a flag rather than a positional argument.
+**Learning:** Argument Injection occurs because argument parsers in typical CLI tools treat anything starting with `-` or `--` as an option until they see a bare `--` (end of options). This allows malicious inputs to change the command's behavior and potentially bypass validations or execute unwanted actions.
+**Prevention:** When passing variables as positional arguments to CLI commands in `subprocess.run` (like `pip`, `twine`, or `uv`), ALWAYS prepend a `--` before the variable arguments in the command list to ensure they are strictly treated as positional values.
