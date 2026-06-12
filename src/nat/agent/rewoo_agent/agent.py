@@ -246,16 +246,20 @@ class ReWOOAgentGraph(BaseAgent):
             logger.debug("%s Successfully parsed structured tool input", AGENT_LOG_PREFIX)
 
         except JSONDecodeError:
-            try:
-                # Replace single quotes with double quotes and attempt parsing again
-                tool_input_fixed = tool_input.replace("'", '"')
-                tool_input_parsed = json.loads(tool_input_fixed)
-                logger.debug(
-                    "%s Successfully parsed structured tool input after replacing single quotes with double quotes",
-                    AGENT_LOG_PREFIX)
-
-            except JSONDecodeError:
-                # If it still fails, fall back to using the input as a raw string
+            if "'" in tool_input:
+                try:
+                    # Replace single quotes with double quotes and attempt parsing again
+                    tool_input_fixed = tool_input.replace("'", '"')
+                    tool_input_parsed = json.loads(tool_input_fixed)
+                    logger.debug(
+                        "%s Successfully parsed structured tool input after replacing single quotes with double quotes",
+                        AGENT_LOG_PREFIX)
+                except JSONDecodeError:
+                    # If it still fails, fall back to using the input as a raw string
+                    tool_input_parsed = tool_input
+                    logger.debug("%s Unable to parse structured tool input. Using raw tool input as is.", AGENT_LOG_PREFIX)
+            else:
+                # If no single quotes to replace, fall back to using the input as a raw string
                 tool_input_parsed = tool_input
                 logger.debug("%s Unable to parse structured tool input. Using raw tool input as is.", AGENT_LOG_PREFIX)
 

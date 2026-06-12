@@ -301,8 +301,9 @@ class ReActAgentGraph(DualNodeAgent):
             logger.debug("%s Successfully parsed structured tool input from Action Input", AGENT_LOG_PREFIX)
 
         except JSONDecodeError as original_ex:
-            if self.normalize_tool_input_quotes:
-                # If initial JSON parsing fails, try with quote normalization as a fallback
+            if self.normalize_tool_input_quotes and "'" in tool_input_str:
+                # If initial JSON parsing fails and string contains single quotes,
+                # try with quote normalization as a fallback
                 normalized_str = tool_input_str.replace("'", '"')
                 try:
                     tool_input = json.loads(normalized_str)
