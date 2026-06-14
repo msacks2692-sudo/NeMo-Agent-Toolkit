@@ -19,6 +19,8 @@ from collections.abc import AsyncGenerator
 
 from pydantic import Field
 
+from nat.utils.io.model_processing import remove_r1_think_tags
+
 from nat.builder.builder import Builder
 from nat.builder.framework_enum import LLMFrameworkEnum
 from nat.builder.function_info import FunctionInfo
@@ -83,17 +85,6 @@ async def build_reasoning_function(config: ReasoningFunctionConfig, builder: Bui
     from langchain_core.prompts import PromptTemplate
 
     from nat.agent.base import AGENT_LOG_PREFIX
-
-    def remove_r1_think_tags(text: str):
-        pattern = r'(<think>)?.*?</think>\s*(.*)'
-
-        # Add re.DOTALL flag to make . match newlines
-        match = re.match(pattern, text, re.DOTALL)
-
-        if match:
-            return match.group(2)
-
-        return text
 
     # Get the LLM to use for reasoning
     llm: BaseChatModel = await builder.get_llm(config.llm_name, wrapper_type=LLMFrameworkEnum.LANGCHAIN)
