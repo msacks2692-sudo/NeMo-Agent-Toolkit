@@ -613,6 +613,8 @@ class FastApiFrontEndPluginWorker(FastApiFrontEndPluginWorkerBase):
             filename = os.path.basename(sanitized_path)
             if not filename:
                 raise HTTPException(status_code=400, detail="Filename cannot be empty.")
+            if sanitized_path.startswith("..") or ".." in sanitized_path.split(os.path.sep):
+                raise HTTPException(status_code=400, detail="Invalid file path.")
             return sanitized_path
 
         # Upload static files to the object store; if key is present, it will fail with 409 Conflict
