@@ -608,6 +608,8 @@ class FastApiFrontEndPluginWorker(FastApiFrontEndPluginWorkerBase):
 
         def sanitize_path(path: str) -> str:
             sanitized_path = os.path.normpath(path.strip("/"))
+            if sanitized_path.startswith("..") or ".." in sanitized_path.split(os.path.sep):
+                raise HTTPException(status_code=400, detail="Invalid file path.")
             if sanitized_path == ".":
                 raise HTTPException(status_code=400, detail="Invalid file path.")
             filename = os.path.basename(sanitized_path)
