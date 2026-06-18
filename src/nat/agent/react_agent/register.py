@@ -42,34 +42,43 @@ class ReActAgentWorkflowConfig(AgentBaseConfig, OptimizableMixin, name="react_ag
     Defines a NAT function that uses a ReAct Agent performs reasoning inbetween tool calls, and utilizes the
     tool names and descriptions to select the optimal tool.
     """
+
     description: str = Field(default="ReAct Agent Workflow", description="The description of this functions use.")
     tool_names: list[FunctionRef | FunctionGroupRef] = Field(
-        default_factory=list, description="The list of tools to provide to the react agent.")
+        default_factory=list, description="The list of tools to provide to the react agent."
+    )
     retry_agent_response_parsing_errors: bool = Field(
         default=True,
         validation_alias=AliasChoices("retry_agent_response_parsing_errors", "retry_parsing_errors"),
-        description="Whether to retry when encountering parsing errors in the agent's response.")
+        description="Whether to retry when encountering parsing errors in the agent's response.",
+    )
     parse_agent_response_max_retries: int = Field(
         default=1,
         validation_alias=AliasChoices("parse_agent_response_max_retries", "max_retries"),
         description="Maximum number of times the Agent may retry parsing errors. "
-        "Prevents the Agent from getting into infinite hallucination loops.")
+        "Prevents the Agent from getting into infinite hallucination loops.",
+    )
     tool_call_max_retries: int = Field(default=1, description="The number of retries before raising a tool call error.")
-    max_tool_calls: int = Field(default=15,
-                                validation_alias=AliasChoices("max_tool_calls", "max_iterations"),
-                                description="Maximum number of tool calls before stopping the agent.")
+    max_tool_calls: int = Field(
+        default=15,
+        validation_alias=AliasChoices("max_tool_calls", "max_iterations"),
+        description="Maximum number of tool calls before stopping the agent.",
+    )
     pass_tool_call_errors_to_agent: bool = Field(
         default=True,
-        description="Whether to pass tool call errors to agent. If False, failed tool calls will raise an exception.")
+        description="Whether to pass tool call errors to agent. If False, failed tool calls will raise an exception.",
+    )
     include_tool_input_schema_in_tool_description: bool = Field(
-        default=True, description="Specify inclusion of tool input schemas in the prompt.")
+        default=True, description="Specify inclusion of tool input schemas in the prompt."
+    )
     normalize_tool_input_quotes: bool = Field(
         default=True,
         description="Whether to replace single quotes with double quotes in the tool input. "
-        "This is useful for tools that expect structured json input.")
+        "This is useful for tools that expect structured json input.",
+    )
     system_prompt: str | None = Field(
-        default=None,
-        description="Provides the SYSTEM_PROMPT to use with the agent")  # defaults to SYSTEM_PROMPT in prompt.py
+        default=None, description="Provides the SYSTEM_PROMPT to use with the agent"
+    )  # defaults to SYSTEM_PROMPT in prompt.py
     max_history: int = Field(default=15, description="Maximum number of messages to keep in the conversation history.")
     additional_instructions: str | None = OptimizableField(
         default=None,
@@ -78,7 +87,8 @@ class ReActAgentWorkflowConfig(AgentBaseConfig, OptimizableMixin, name="react_ag
             is_prompt=True,
             prompt="No additional instructions.",
             prompt_purpose="Additional instructions to provide to the agent in addition to the base prompt.",
-        ))
+        ),
+    )
 
 
 @register_function(config_type=ReActAgentWorkflowConfig, framework_wrappers=[LLMFrameworkEnum.LANGCHAIN])
@@ -114,7 +124,8 @@ async def react_agent_workflow(config: ReActAgentWorkflowConfig, builder: Builde
         parse_agent_response_max_retries=config.parse_agent_response_max_retries,
         tool_call_max_retries=config.tool_call_max_retries,
         pass_tool_call_errors_to_agent=config.pass_tool_call_errors_to_agent,
-        normalize_tool_input_quotes=config.normalize_tool_input_quotes).build_graph()
+        normalize_tool_input_quotes=config.normalize_tool_input_quotes,
+    ).build_graph()
 
     async def _response_fn(chat_request_or_message: ChatRequestOrMessage) -> ChatResponse | str:
         """
@@ -132,17 +143,19 @@ async def react_agent_workflow(config: ReActAgentWorkflowConfig, builder: Builde
             message = GlobalTypeConverter.get().convert(chat_request_or_message, to_type=ChatRequest)
 
             # initialize the starting state with the user query
-            messages: list[BaseMessage] = trim_messages(messages=[m.model_dump() for m in message.messages],
-                                                        max_tokens=config.max_history,
-                                                        strategy="last",
-                                                        token_counter=len,
-                                                        start_on="human",
-                                                        include_system=True)
+            messages: list[BaseMessage] = trim_messages(
+                messages=[m.model_dump() for m in message.messages],
+                max_tokens=config.max_history,
+                strategy="last",
+                token_counter=len,
+                start_on="human",
+                include_system=True,
+            )
 
             state = ReActGraphState(messages=messages)
 
             # run the ReAct Agent Graph
-            state = await graph.ainvoke(state, config={'recursion_limit': (config.max_tool_calls + 1) * 2})
+            state = await graph.ainvoke(state, config={"recursion_limit": (config.max_tool_calls + 1) * 2})
             # setting recursion_limit: 4 allows 1 tool call
             #   - allows the ReAct Agent to perform 1 cycle / call 1 single tool,
             #   - but stops the agent when it tries to call a tool a second time
