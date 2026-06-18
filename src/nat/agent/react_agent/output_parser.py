@@ -25,17 +25,22 @@ from .prompt import SYSTEM_PROMPT
 FINAL_ANSWER_ACTION = "Final Answer:"
 MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE = "Invalid Format: Missing 'Action:' after 'Thought:'"
 MISSING_ACTION_INPUT_AFTER_ACTION_ERROR_MESSAGE = "Invalid Format: Missing 'Action Input:' after 'Action:'"
-FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE = ("Parsing LLM output produced both a final answer and a parse-able "
-                                                  "action:")
+FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE = (
+    "Parsing LLM output produced both a final answer and a parse-able action:"
+)
+
+# Pre-compile regexes for performance
+_ACTION_REGEX = re.compile(
+    r"Action\s*\d*\s*:[\s]*(.*?)\s*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*?)(?=\s*[\n|\s]\s*Observation\b|$)", re.DOTALL
+)
+_MISSING_ACTION_REGEX = re.compile(r"Action\s*\d*\s*:[\s]*(.*?)", re.DOTALL)
+_MISSING_ACTION_INPUT_REGEX = re.compile(r"[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)", re.DOTALL)
 
 
 class ReActOutputParserException(ValueError, LangChainException):
-
-    def __init__(self,
-                 observation=None,
-                 missing_action=False,
-                 missing_action_input=False,
-                 final_answer_and_action=False):
+    def __init__(
+        self, observation=None, missing_action=False, missing_action_input=False, final_answer_and_action=False
+    ):
         self.observation = observation
         self.missing_action = missing_action
         self.missing_action_input = missing_action_input
@@ -74,13 +79,13 @@ class ReActOutputParser(AgentOutputParser):
 
     def parse(self, text: str) -> AgentAction | AgentFinish:
         includes_answer = FINAL_ANSWER_ACTION in text
-        regex = r"Action\s*\d*\s*:[\s]*(.*?)\s*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*?)(?=\s*[\n|\s]\s*Observation\b|$)"
-        action_match = re.search(regex, text, re.DOTALL)
+        action_match = _ACTION_REGEX.search(text)
         if action_match:
             if includes_answer:
                 raise ReActOutputParserException(
                     final_answer_and_action=True,
-                    observation=f"{FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE}: {text}")
+                    observation=f"{FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE}: {text}",
+                )
             action = action_match.group(1).strip()
             action_input = action_match.group(2)
             tool_input = action_input.strip(" ")
@@ -91,12 +96,14 @@ class ReActOutputParser(AgentOutputParser):
         if includes_answer:
             return AgentFinish({"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text)
 
-        if not re.search(r"Action\s*\d*\s*:[\s]*(.*?)", text, re.DOTALL):
-            raise ReActOutputParserException(observation=MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE,
-                                             missing_action=True)
-        if not re.search(r"[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)", text, re.DOTALL):
-            raise ReActOutputParserException(observation=MISSING_ACTION_INPUT_AFTER_ACTION_ERROR_MESSAGE,
-                                             missing_action_input=True)
+        if not _MISSING_ACTION_REGEX.search(text):
+            raise ReActOutputParserException(
+                observation=MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE, missing_action=True
+            )
+        if not _MISSING_ACTION_INPUT_REGEX.search(text):
+            raise ReActOutputParserException(
+                observation=MISSING_ACTION_INPUT_AFTER_ACTION_ERROR_MESSAGE, missing_action_input=True
+            )
         raise ReActOutputParserException(f"Could not parse LLM output: `{text}`")
 
     @property

@@ -32,13 +32,16 @@ class PerUserReActAgentWorkflowConfig(ReActAgentWorkflowConfig, name="per_user_r
     Per-user version of ReAct Agent for use with per-user function groups like per_user_mcp_client.
     Each user gets their own agent instance with isolated state.
     """
+
     pass  # Inherit all fields from ReActAgentWorkflowConfig
 
 
-@register_per_user_function(config_type=PerUserReActAgentWorkflowConfig,
-                            input_type=ChatRequest,
-                            single_output_type=ChatResponse,
-                            framework_wrappers=[LLMFrameworkEnum.LANGCHAIN])
+@register_per_user_function(
+    config_type=PerUserReActAgentWorkflowConfig,
+    input_type=ChatRequest,
+    single_output_type=ChatResponse,
+    framework_wrappers=[LLMFrameworkEnum.LANGCHAIN],
+)
 async def per_user_react_agent_workflow(config: PerUserReActAgentWorkflowConfig, builder: Builder):
     """Per-user ReAct Agent - each user gets their own isolated instance."""
     from langchain_core.messages import BaseMessage
@@ -70,28 +73,33 @@ async def per_user_react_agent_workflow(config: PerUserReActAgentWorkflowConfig,
         parse_agent_response_max_retries=config.parse_agent_response_max_retries,
         tool_call_max_retries=config.tool_call_max_retries,
         pass_tool_call_errors_to_agent=config.pass_tool_call_errors_to_agent,
-        normalize_tool_input_quotes=config.normalize_tool_input_quotes).build_graph()
+        normalize_tool_input_quotes=config.normalize_tool_input_quotes,
+    ).build_graph()
 
     async def _response_fn(chat_request_or_message: ChatRequestOrMessage) -> ChatResponse | str:
         try:
             message = GlobalTypeConverter.get().convert(chat_request_or_message, to_type=ChatRequest)
-            messages: list[BaseMessage] = trim_messages(messages=[m.model_dump() for m in message.messages],
-                                                        max_tokens=config.max_history,
-                                                        strategy="last",
-                                                        token_counter=len,
-                                                        start_on="human",
-                                                        include_system=True)
+            messages: list[BaseMessage] = trim_messages(
+                messages=[m.model_dump() for m in message.messages],
+                max_tokens=config.max_history,
+                strategy="last",
+                token_counter=len,
+                start_on="human",
+                include_system=True,
+            )
             state = ReActGraphState(messages=messages)
-            state = await graph.ainvoke(state, config={'recursion_limit': (config.max_tool_calls + 1) * 2})
+            state = await graph.ainvoke(state, config={"recursion_limit": (config.max_tool_calls + 1) * 2})
             state = ReActGraphState(**state)
             output_message = state.messages[-1]
             content = str(output_message.content)
 
             prompt_tokens = sum(len(str(msg.content).split()) for msg in message.messages)
             completion_tokens = len(content.split()) if content else 0
-            usage = Usage(prompt_tokens=prompt_tokens,
-                          completion_tokens=completion_tokens,
-                          total_tokens=prompt_tokens + completion_tokens)
+            usage = Usage(
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                total_tokens=prompt_tokens + completion_tokens,
+            )
             response = ChatResponse.from_string(content, usage=usage)
 
             if chat_request_or_message.is_string:
