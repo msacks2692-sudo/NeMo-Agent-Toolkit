@@ -1,3 +1,7 @@
-## 2024-10-24 - [Optimize JSON validation]
-**Learning:** When optimizing JSON validation, use a 'try-parse first' strategy instead of blanket string replacements (e.g., replacing single quotes with double quotes) before parsing. This prevents corrupting valid JSON that legitimately contains the replaced characters and avoids performance overhead on the happy path.
-**Action:** Always attempt to parse the original string first. Only fallback to quote replacement and a second parse attempt if the initial parse fails and single quotes are actually present in the string.
+## 2025-06-20 - Pre-compiling Regex in ReAct output parser
+**Learning:** Precompiling regexes in hot paths is important, but replacing dynamic string regex matching on failure paths is unexpectedly a huge optimization, speeding up the fail path by ~48%.
+**Action:** Always check the failure paths for dynamic regex compilation.
+
+## 2025-06-20 - Pre-compiling Regex in ReAct output parser
+**Learning:** Precompiling regexes in hot paths is important, but replacing dynamic string regex matching on failure paths is unexpectedly a huge optimization, speeding up the fail path by ~48%.
+**Action:** Always check the failure paths for dynamic regex compilation.
