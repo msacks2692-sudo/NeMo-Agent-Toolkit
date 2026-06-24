@@ -608,7 +608,7 @@ class FastApiFrontEndPluginWorker(FastApiFrontEndPluginWorkerBase):
 
         def sanitize_path(path: str) -> str:
             sanitized_path = os.path.normpath(path.strip("/"))
-            if sanitized_path == ".":
+            if sanitized_path == "." or ".." in sanitized_path.split(os.sep):
                 raise HTTPException(status_code=400, detail="Invalid file path.")
             filename = os.path.basename(sanitized_path)
             if not filename:
@@ -640,9 +640,10 @@ class FastApiFrontEndPluginWorker(FastApiFrontEndPluginWorkerBase):
 
         # Get static files from the object store
         async def get_static_file(file_path: str):
+            sanitized_file_path = sanitize_path(file_path)
 
             try:
-                file_data = await object_store_client.get_object(file_path)
+                file_data = await object_store_client.get_object(sanitized_file_path)
             except NoSuchKeyError as e:
                 raise HTTPException(status_code=404, detail=str(e)) from e
 
@@ -656,8 +657,9 @@ class FastApiFrontEndPluginWorker(FastApiFrontEndPluginWorkerBase):
                                      headers={"Content-Disposition": f"attachment; filename={filename}"})
 
         async def delete_static_file(file_path: str):
+            sanitized_file_path = sanitize_path(file_path)
             try:
-                await object_store_client.delete_object(file_path)
+                await object_store_client.delete_object(sanitized_file_path)
             except NoSuchKeyError as e:
                 raise HTTPException(status_code=404, detail=str(e)) from e
 
