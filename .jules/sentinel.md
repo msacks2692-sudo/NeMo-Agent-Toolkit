@@ -1,0 +1,5 @@
+
+## 2024-05-28 - Path Traversal in FastAPI Object Store Static Files
+**Vulnerability:** The `sanitize_path` function in the FastAPI plugin worker (`src/nat/front_ends/fastapi/fastapi_front_end_plugin_worker.py`) used `os.path.normpath()` to resolve paths for static file uploads and downloads. However, `os.path.normpath("../../etc/passwd")` returns `"../../etc/passwd"`, retaining the leading traversal markers. This allowed an attacker to bypass the directory restriction and potentially read or write files outside the intended object store directory.
+**Learning:** `os.path.normpath` only resolves intermediate `..` sequences (like `a/b/../c` to `a/c`), but it does not prevent or remove leading `..` sequences. Relying on it alone is insufficient for sanitizing user-provided paths.
+**Prevention:** Always verify that the normalized path does not contain `..` by explicitly checking the path segments (e.g., `if ".." in sanitized_path.split(os.sep):`). Avoid simple string matching like `.startswith("..")` which can falsely flag valid filenames like `..config.txt`.
