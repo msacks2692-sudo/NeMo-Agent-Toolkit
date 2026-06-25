@@ -311,6 +311,17 @@ async def test_static_file_endpoints():
         )
         assert response.status_code == 409
 
+        # POST path traversal: Should fail with 400
+        response = await client.post(
+            "/static/../../etc/passwd",
+            files={"file": ("passwd", io.BytesIO(file_content), content_type)},
+        )
+        assert response.status_code == 400
+
+        # GET path traversal: Should fail with 400
+        response = await client.get("/static/../../etc/passwd")
+        assert response.status_code == 400
+
         # PUT: Upsert (update) the file
         response = await client.put(
             f"/static/{file_path}",
