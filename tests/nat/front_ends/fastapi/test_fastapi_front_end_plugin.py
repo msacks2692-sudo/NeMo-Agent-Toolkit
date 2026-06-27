@@ -335,3 +335,24 @@ async def test_static_file_endpoints():
         # GET: Should now 404
         response = await client.get(f"/static/{file_path}")
         assert response.status_code == 404
+
+async def test_static_file_endpoints_path_traversal():
+    object_store_name = "test_store"
+    config = Config(
+        general=GeneralConfig(front_end=FastApiFrontEndConfig(object_store=object_store_name)),
+        object_stores={object_store_name: InMemoryObjectStoreConfig()},
+        workflow=EchoFunctionConfig(),
+    )
+
+    async with build_nat_client(config) as client:
+        # Attempt to upload with path traversal - use a payload to bypass Starlette's automatic URL path normalization.
+        # It's better to URL encode it to avoid the client normalizing it before sending it to the server.
+        file_path = "..%2F..%2Fetc%2Fpasswd"
+        file_content = b"Hack!"
+        content_type = "text/plain"
+        response = await client.post(
+            f"/static/{file_path}",
+            files={"file": ("testfile.txt", io.BytesIO(file_content), content_type)},
+        )
+        assert response.status_code == 400
+        assert "Invalid file path" in response.json()["detail"]
