@@ -1,3 +1,3 @@
-## 2024-10-24 - [Optimize JSON validation]
-**Learning:** When optimizing JSON validation, use a 'try-parse first' strategy instead of blanket string replacements (e.g., replacing single quotes with double quotes) before parsing. This prevents corrupting valid JSON that legitimately contains the replaced characters and avoids performance overhead on the happy path.
-**Action:** Always attempt to parse the original string first. Only fallback to quote replacement and a second parse attempt if the initial parse fails and single quotes are actually present in the string.
+## 2025-06-29 - [Precompiling Large Agent Regular Expressions]
+**Learning:** High-frequency, dynamic regex operations (`re.search(r"...")`) in critical execution paths, specifically LLM-output parsers like ReAct (e.g., `src/nat/agent/react_agent/output_parser.py`), can become a bottleneck during sustained agent workflows due to repeated compilation and dictionary caching lookups.
+**Action:** Extract large and heavily utilized regex patterns to module-level `re.compile()` constants. This practice reduces continuous overhead during repeated parser invocations without sacrificing code readability.
