@@ -610,6 +610,8 @@ class FastApiFrontEndPluginWorker(FastApiFrontEndPluginWorkerBase):
             sanitized_path = os.path.normpath(path.strip("/"))
             if sanitized_path == ".":
                 raise HTTPException(status_code=400, detail="Invalid file path.")
+            if '..' in sanitized_path.split(os.sep):
+                raise HTTPException(status_code=400, detail="Path traversal is not allowed.")
             filename = os.path.basename(sanitized_path)
             if not filename:
                 raise HTTPException(status_code=400, detail="Filename cannot be empty.")
