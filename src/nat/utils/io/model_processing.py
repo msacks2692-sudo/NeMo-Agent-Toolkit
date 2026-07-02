@@ -15,12 +15,10 @@
 
 import re
 
+_R1_THINK_TAG_PATTERN = re.compile(r'(<think>)?.*?</think>\s*(.*)', re.DOTALL)
 
 def remove_r1_think_tags(text: str):
-    pattern = r'(<think>)?.*?</think>\s*(.*)'
-
-    # Add re.DOTALL flag to make . match newlines
-    match = re.match(pattern, text, re.DOTALL)
+    match = _R1_THINK_TAG_PATTERN.match(text)
 
     if match:
         return match.group(2)
