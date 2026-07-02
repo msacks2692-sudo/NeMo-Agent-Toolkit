@@ -28,8 +28,11 @@ from nat.llm.nim_llm import NIMModelConfig
 from nat.llm.openai_llm import OpenAIModelConfig
 
 
+import ast
+import operator
+
 def calculator(expression: str) -> str:
-    """Calculate the result of a mathematical expression.
+    """Calculate the result of a mathematical expression safely using AST.
 
     Args:
         expression: A string containing a mathematical expression (e.g., "2 + 2")
@@ -38,8 +41,24 @@ def calculator(expression: str) -> str:
         The result of the calculation as a string
     """
     try:
-        # Safely evaluate the expression
-        result = eval(expression)
+        operators = {
+            ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
+            ast.Div: operator.truediv, ast.FloorDiv: operator.floordiv,
+            ast.Pow: operator.pow, ast.BitXor: operator.xor, ast.USub: operator.neg
+        }
+
+        def eval_node(node):
+            if isinstance(node, ast.Constant):
+                return node.value
+            elif isinstance(node, ast.BinOp):
+                return operators[type(node.op)](eval_node(node.left), eval_node(node.right))
+            elif isinstance(node, ast.UnaryOp):
+                return operators[type(node.op)](eval_node(node.operand))
+            else:
+                raise TypeError(f"Unsupported node type: {type(node).__name__}")
+
+        node = ast.parse(expression, mode='eval').body
+        result = eval_node(node)
         return str(result)
     except Exception as e:
         return f"Error calculating expression: {str(e)}"
