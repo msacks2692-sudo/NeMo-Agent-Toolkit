@@ -1,3 +1,3 @@
-## 2024-10-24 - [Optimize JSON validation]
-**Learning:** When optimizing JSON validation, use a 'try-parse first' strategy instead of blanket string replacements (e.g., replacing single quotes with double quotes) before parsing. This prevents corrupting valid JSON that legitimately contains the replaced characters and avoids performance overhead on the happy path.
-**Action:** Always attempt to parse the original string first. Only fallback to quote replacement and a second parse attempt if the initial parse fails and single quotes are actually present in the string.
+## 2025-05-15 - Compile ReAct Parser Regexes at Module Level
+**Learning:** `ReActOutputParser` dynamically compiles three regular expressions in its `parse()` method which is called repeatedly on every LLM response chunk/step. Python's `re.search` caches recently used patterns, but explicitly pre-compiling them at the module level using `re.compile()` removes the compilation overhead entirely and improves throughput for the agent's hot path and failure path.
+**Action:** Pre-compile regular expressions at the module level when they are used in high-frequency string parsing components like output parsers.
