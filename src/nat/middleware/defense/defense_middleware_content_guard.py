@@ -37,6 +37,9 @@ from nat.middleware.middleware import FunctionMiddlewareContext
 
 logger = logging.getLogger(__name__)
 
+UNSAFE_REGEX = re.compile(r'\bunsafe\b')
+SAFE_REGEX = re.compile(r'\bsafe\b')
+
 
 class ContentSafetyGuardMiddlewareConfig(DefenseMiddlewareConfig, name="content_safety_guard"):
     """Configuration for Content Safety Guard middleware.
@@ -169,9 +172,9 @@ class ContentSafetyGuardMiddleware(DefenseMiddleware):
 
         # Search for "Unsafe" or "Safe" anywhere in the response (case-insensitive)
         # Prioritize "Unsafe" if both are present
-        if re.search(r'\bunsafe\b', response_lower):
+        if UNSAFE_REGEX.search(response_lower):
             is_safe = False
-        elif re.search(r'\bsafe\b', response_lower):
+        elif SAFE_REGEX.search(response_lower):
             is_safe = True
         else:
             # Detect implicit refusals (model refuses = harmful content detected)

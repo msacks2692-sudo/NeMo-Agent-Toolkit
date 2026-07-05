@@ -36,6 +36,8 @@ from nat.middleware.middleware import FunctionMiddlewareContext
 
 logger = logging.getLogger(__name__)
 
+JSON_EXTRACT_REGEX = re.compile(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', re.DOTALL)
+
 
 class OutputVerifierMiddlewareConfig(DefenseMiddlewareConfig, name="output_verifier"):
     """Configuration for Output Verifier middleware.
@@ -117,7 +119,7 @@ class OutputVerifierMiddleware(DefenseMiddleware):
             response_text = response_text.split("```")[1].split("```")[0].strip()
 
         # Extract JSON object (handles nested braces)
-        json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response_text, re.DOTALL)
+        json_match = JSON_EXTRACT_REGEX.search(response_text)
         if json_match:
             return json_match.group(0)
 
