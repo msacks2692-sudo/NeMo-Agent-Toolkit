@@ -41,7 +41,9 @@ logger = logging.getLogger(__name__)
 def _shallow_copy_args(args: tuple, kwargs: dict) -> tuple[tuple, dict]:
     """Create shallow copies of args and kwargs to avoid deep copy overhead."""
     # For most use cases, shallow copy is sufficient and much faster
-    return tuple(args), dict(kwargs)
+    # Tuple is immutable, returning it directly avoids a redundant copy.
+    # kwargs.copy() is faster than dict(kwargs) as it avoids global lookup.
+    return args, kwargs.copy()
 
 
 def _deep_copy_args(args: tuple, kwargs: dict, skip_first: bool = False) -> tuple[tuple, dict]:
