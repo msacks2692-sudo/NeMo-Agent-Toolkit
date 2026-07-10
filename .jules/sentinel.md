@@ -1,0 +1,4 @@
+## 2024-07-10 - [Path Traversal in FastAPI Static Files Endpoint]
+**Vulnerability:** Path traversal (`../../`) vulnerability found in `sanitize_path` inside `src/nat/front_ends/fastapi/fastapi_front_end_plugin_worker.py`.
+**Learning:** Using `os.path.normpath(path.strip("/"))` only resolves redundant separators and up-level references if they don't exceed the root of the relative path provided. If an attacker provided a path like `../../etc/passwd`, `normpath` will preserve the leading `..`, allowing them to escape the intended directory since the subsequent validation only checked `if sanitized_path == "."`.
+**Prevention:** Always combine `os.path.normpath` with explicit checks against directory climbing sequences. Either strictly match the resolved path against a known safe base directory using absolute paths and `startswith`, or explicitly check that the normalized path components (using `split(os.sep)`) do not contain `..`.
