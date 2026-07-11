@@ -1,0 +1,4 @@
+## 2025-02-17 - [Path Traversal via Object Store Static Files]
+**Vulnerability:** Path traversal vulnerability in `sanitize_path` function within `add_static_files_route` of `FastApiFrontEndPluginWorker`, allowing users to escape the intended directory structure.
+**Learning:** `os.path.normpath` alone is insufficient to prevent path traversal when `..` is part of the path, especially if it resolves to a higher-level directory outside the base path context, as `os.path.normpath` doesn't restrict paths from walking up the directory tree.
+**Prevention:** Always verify that `..` is not present in the sanitized path's parts (e.g., using `'..' in path.split(os.sep)`) and use `os.path.basename` when extracting just the filename, or explicitly anchor to a base directory and check `os.path.commonpath`.
